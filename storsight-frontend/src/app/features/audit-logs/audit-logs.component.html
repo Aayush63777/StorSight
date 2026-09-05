@@ -1,0 +1,167 @@
+<ss-page-header
+  title="Audit Logs"
+  subtitle="Operational action history">
+</ss-page-header>
+
+<!-- Filter bar -->
+<div class="filter-bar">
+
+  <div class="filter-bar__field">
+    <label for="audit-entity-type-filter" class="sr-only">Filter by entity type</label>
+    <select
+      id="audit-entity-type-filter"
+      class="form-control filter-bar__select"
+      [value]="entityTypeFilter()"
+      (change)="onEntityTypeChange($any($event.target).value)"
+      aria-label="Filter audit logs by entity type">
+      <option value="">All entity types</option>
+      @for (t of entityTypes(); track t) {
+        <option [value]="t">{{ t }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="filter-bar__search">
+    <span class="filter-bar__icon" aria-hidden="true">⌕</span>
+    <input
+      type="search"
+      class="form-control filter-bar__input"
+      placeholder="Search action…"
+      [value]="actionKeyword()"
+      (input)="onActionKeywordChange($any($event.target).value)"
+      aria-label="Search audit logs by action keyword" />
+  </div>
+
+  @if (hasActiveFilters()) {
+    <button
+      class="btn btn--ghost filter-bar__clear"
+      (click)="clearFilters()"
+      aria-label="Clear all filters">
+      ✕ Clear
+    </button>
+  }
+</div>
+
+<!-- Loading -->
+@if (loading()) {
+  <ss-loading-spinner label="Loading audit logs…"></ss-loading-spinner>
+}
+
+<!-- Error -->
+@if (!loading() && error()) {
+  <ss-error-banner
+    [message]="error()"
+    [dismissible]="false">
+  </ss-error-banner>
+  <div class="retry-row">
+    <button class="btn btn--ghost" (click)="load()">Retry</button>
+  </div>
+}
+
+<!-- Empty -->
+@if (!loading() && !error() && filtered().length === 0) {
+  <div class="card empty-card">
+    <ss-empty-state
+      icon="📋"
+      message="No audit entries found"
+      [subMessage]="hasActiveFilters() ? 'No entries match the active filters.' : 'No audit activity has been recorded yet.'">
+    </ss-empty-state>
+    @if (hasActiveFilters()) {
+      <div class="empty-card__action">
+        <button class="btn btn--ghost" (click)="clearFilters()">Clear Filters</button>
+      </div>
+    }
+  </div>
+}
+
+<!-- Audit log table -->
+@if (!loading() && !error() && filtered().length > 0) {
+  <div class="card audit-table-card">
+
+    <!-- Table header row with count badge -->
+    <div class="audit-table-card__header">
+      <span class="section-count">{{ filtered().length }}</span>
+      <span class="audit-table-card__label">
+        {{ filtered().length === 1 ? 'entry' : 'entries' }}
+        @if (hasActiveFilters()) { <span class="filter-tag">(filtered)</span> }
+      </span>
+    </div>
+
+    <div class="table-wrapper">
+      <table class="table" aria-label="Audit log entries">
+        <thead>
+          <tr>
+            <th scope="col">Action</th>
+            <th scope="col">Entity type</th>
+            <th scope="col">Entity ID</th>
+            <th scope="col">User</th>
+            <th scope="col">Details</th>
+            <th scope="col">Time</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (log of paginated(); track log.id) {
+            <tr class="audit-row">
+              <td class="audit-row__action">
+                <span class="audit-action-label">{{ formatAction(log.action) }}</span>
+              </td>
+              <td class="audit-row__entity-type">
+                @if (log.entity_type) {
+                  <span class="entity-badge">{{ log.entity_type }}</span>
+                } @else {
+                  <span class="text-muted">—</span>
+                }
+              </td>
+              <td class="audit-row__entity-id">
+                @if (log.entity_id !== null) {
+                  <span class="mono">{{ log.entity_id }}</span>
+                } @else {
+                  <span class="text-muted">—</span>
+                }
+              </td>
+              <td class="audit-row__user">
+                @if (log.user_id !== null) {
+                  <span class="mono">{{ log.user_id }}</span>
+                } @else {
+                  <span class="text-muted">—</span>
+                }
+              </td>
+              <td class="audit-row__details">
+                <span class="details-text" [title]="log.details ?? ''">
+                  {{ truncateDetails(log.details) }}
+                </span>
+              </td>
+              <td class="audit-row__time">
+                {{ log.created_at | relativeTime }}
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    @if (totalPages() > 1) {
+      <div class="pagination" role="navigation" aria-label="Audit log pagination">
+        <button
+          class="btn btn--ghost btn--sm"
+          (click)="prevPage()"
+          [disabled]="currentPage() === 1"
+          aria-label="Previous page">
+          ← Prev
+        </button>
+        <span class="pagination__info">
+          Page {{ currentPage() }} of {{ totalPages() }}
+        </span>
+        <button
+          class="btn btn--ghost btn--sm"
+          (click)="nextPage()"
+          [disabled]="currentPage() === totalPages()"
+          aria-label="Next page">
+          Next →
+        </button>
+      </div>
+    }
+
+  </div>
+}

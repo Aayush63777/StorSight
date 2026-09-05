@@ -1,0 +1,191 @@
+<ss-page-header
+  title="Alerts"
+  subtitle="Active and resolved operational alerts">
+</ss-page-header>
+
+<!-- Filter bar -->
+<div class="filter-bar">
+
+  <div class="filter-bar__field">
+    <label for="alert-resource" class="sr-only">Filter by resource</label>
+    <select
+      id="alert-resource"
+      class="form-control filter-bar__select"
+      [value]="resourceFilter() ?? ''"
+      (change)="onResourceChange($any($event.target).value)"
+      [disabled]="resourcesLoading()"
+      aria-label="Filter alerts by resource">
+      <option value="">All resources</option>
+      @for (r of resources(); track r.id) {
+        <option [value]="r.id">{{ r.name }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="filter-bar__field">
+    <label for="alert-severity" class="sr-only">Filter by severity</label>
+    <select
+      id="alert-severity"
+      class="form-control filter-bar__select"
+      [value]="severityFilter()"
+      (change)="onSeverityChange($any($event.target).value)"
+      aria-label="Filter alerts by severity">
+      <option value="">All severities</option>
+      @for (s of severities; track s) {
+        <option [value]="s">{{ s }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="filter-bar__field">
+    <label for="alert-status" class="sr-only">Filter by status</label>
+    <select
+      id="alert-status"
+      class="form-control filter-bar__select"
+      [value]="statusFilter()"
+      (change)="onStatusChange($any($event.target).value)"
+      aria-label="Filter alerts by status">
+      <option value="">All statuses</option>
+      @for (s of statuses; track s) {
+        <option [value]="s">{{ s }}</option>
+      }
+    </select>
+  </div>
+
+  @if (hasActiveFilters()) {
+    <button
+      class="btn btn--ghost filter-bar__clear"
+      (click)="clearFilters()"
+      aria-label="Clear all filters">
+      ✕ Clear
+    </button>
+  }
+</div>
+
+<!-- Resolve error -->
+@if (resolveError()) {
+  <ss-error-banner
+    [message]="resolveError()"
+    [dismissible]="true"
+    (dismissed)="resolveError.set(null)">
+  </ss-error-banner>
+}
+
+<!-- Loading -->
+@if (loading()) {
+  <ss-loading-spinner label="Loading alerts…"></ss-loading-spinner>
+}
+
+<!-- Error -->
+@if (!loading() && error()) {
+  <ss-error-banner
+    [message]="error()"
+    [dismissible]="true"
+    (dismissed)="error.set(null)">
+  </ss-error-banner>
+  <div class="retry-row">
+    <button class="btn btn--ghost" (click)="loadAlerts()">Retry</button>
+  </div>
+}
+
+<!-- Empty -->
+@if (!loading() && !error() && alerts().length === 0) {
+  <div class="card empty-card">
+    <ss-empty-state
+      icon="🔔"
+      message="No alerts found"
+      [subMessage]="hasActiveFilters() ? 'No alerts match the selected filters.' : 'No alerts have been recorded yet.'">
+    </ss-empty-state>
+    @if (hasActiveFilters()) {
+      <div class="empty-card__action">
+        <button class="btn btn--ghost" (click)="clearFilters()">Clear Filters</button>
+      </div>
+    }
+  </div>
+}
+
+<!-- Alert table -->
+@if (!loading() && !error() && alerts().length > 0) {
+  <div class="card alerts-table-card">
+    <div class="table-wrapper">
+      <table class="table" aria-label="Operational alerts">
+        <thead>
+          <tr>
+            <th scope="col">Severity</th>
+            <th scope="col">Title</th>
+            <th scope="col">Resource</th>
+            <th scope="col">Status</th>
+            <th scope="col">Created</th>
+            <th scope="col">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (a of alerts(); track a.id) {
+            <tr
+              class="alert-row"
+              [class.alert-row--active]="a.status === 'active'"
+              [class.alert-row--critical]="a.severity === 'critical'"
+              (click)="navigateTo(a.id)"
+              (keydown.enter)="navigateTo(a.id)"
+              tabindex="0"
+              [attr.aria-label]="a.title + ', ' + a.severity + ', ' + a.status">
+              <td class="alert-row__severity">
+                <ss-severity-badge [severity]="a.severity"></ss-severity-badge>
+              </td>
+              <td class="alert-row__title">
+                <span class="alert-title">{{ a.title }}</span>
+                @if (a.message) {
+                  <span class="alert-message">{{ a.message }}</span>
+                }
+              </td>
+              <td class="alert-row__resource">
+                <a
+                  class="resource-link"
+                  [routerLink]="['/storage-resources', a.resource_id]"
+                  (click)="$event.stopPropagation()"
+                  [attr.aria-label]="'View resource ' + resourceName(a.resource_id)">
+                  {{ resourceName(a.resource_id) }}
+                </a>
+              </td>
+              <td>
+                <ss-status-badge [status]="a.status"></ss-status-badge>
+              </td>
+              <td class="alert-row__time">
+                {{ a.created_at | relativeTime }}
+              </td>
+              <td class="alert-row__actions" (click)="$event.stopPropagation()">
+                @if (a.status === 'active') {
+                  <button
+                    class="btn btn--ghost btn--sm"
+                    (click)="openResolveDialog(a, $event)"
+                    [disabled]="resolving()"
+                    [attr.aria-label]="'Resolve alert: ' + a.title">
+                    Resolve
+                  </button>
+                } @else {
+                  <span class="resolved-label">Resolved {{ a.resolved_at | relativeTime }}</span>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <div class="table-footer">
+      <span class="table-footer__count">
+        {{ alerts().length }} {{ alerts().length === 1 ? 'alert' : 'alerts' }}
+        @if (hasActiveFilters()) { (filtered) }
+      </span>
+    </div>
+  </div>
+}
+
+<!-- Resolve confirmation dialog -->
+<ss-confirm-dialog
+  [open]="resolveTarget() !== null"
+  title="Resolve Alert"
+  [message]="'Mark &quot;' + (resolveTarget()?.title ?? '') + '&quot; as resolved?'"
+  confirmLabel="Resolve"
+  (confirmed)="confirmResolve()"
+  (cancelled)="cancelResolve()">
+</ss-confirm-dialog>

@@ -1,0 +1,172 @@
+<ss-page-header
+  title="Storage Resources"
+  subtitle="Manage and monitor infrastructure storage resources">
+  <a class="btn btn--primary" routerLink="/storage-resources/new" aria-label="Add storage resource">
+    + Add Resource
+  </a>
+</ss-page-header>
+
+<!-- Filter bar -->
+<div class="filter-bar">
+  <div class="filter-bar__search">
+    <span class="filter-bar__icon" aria-hidden="true">⌕</span>
+    <input
+      type="search"
+      class="form-control filter-bar__input"
+      placeholder="Search by name…"
+      [value]="nameFilter()"
+      (input)="onNameInput($any($event.target).value)"
+      aria-label="Search resources by name" />
+  </div>
+
+  <div class="filter-bar__selects">
+    <select
+      class="form-control filter-bar__select"
+      [value]="statusFilter()"
+      (change)="onStatusChange($any($event.target).value)"
+      aria-label="Filter by status">
+      <option value="">All statuses</option>
+      @for (s of statusOptions.slice(1); track s) {
+        <option [value]="s">{{ s }}</option>
+      }
+    </select>
+
+    <select
+      class="form-control filter-bar__select"
+      [value]="resourceTypeFilter()"
+      (change)="onResourceTypeChange($any($event.target).value)"
+      aria-label="Filter by resource type">
+      <option value="">All types</option>
+      @for (t of resourceTypeOptions.slice(1); track t) {
+        <option [value]="t">{{ t }}</option>
+      }
+    </select>
+
+    @if (hasActiveFilters()) {
+      <button class="btn btn--ghost filter-bar__clear" (click)="clearFilters()" aria-label="Clear all filters">
+        ✕ Clear
+      </button>
+    }
+  </div>
+</div>
+
+<!-- Loading -->
+@if (loading()) {
+  <ss-loading-spinner label="Loading storage resources…"></ss-loading-spinner>
+}
+
+<!-- Error -->
+@if (!loading() && error()) {
+  <ss-error-banner
+    [message]="error()"
+    [dismissible]="true"
+    (dismissed)="error.set(null)">
+  </ss-error-banner>
+  <div style="text-align:center;padding:1rem">
+    <button class="btn btn--ghost" (click)="loadResources()">Retry</button>
+  </div>
+}
+
+<!-- Empty — no resources at all -->
+@if (!loading() && !error() && resources().length === 0) {
+  <div class="card" style="padding:0">
+    <ss-empty-state
+      icon="💾"
+      message="No storage resources found"
+      subMessage="Add your first resource to begin monitoring infrastructure.">
+    </ss-empty-state>
+    <div style="text-align:center;padding-bottom:1.5rem">
+      <a class="btn btn--primary" routerLink="/storage-resources/new">Add Resource</a>
+    </div>
+  </div>
+}
+
+<!-- Empty — filtered, but resources exist -->
+@if (!loading() && !error() && resources().length > 0 && filtered().length === 0) {
+  <div class="card" style="padding:0">
+    <ss-empty-state
+      icon="🔍"
+      message="No matching resources"
+      subMessage="Try adjusting your filters.">
+    </ss-empty-state>
+    <div style="text-align:center;padding-bottom:1.5rem">
+      <button class="btn btn--ghost" (click)="clearFilters()">Clear Filters</button>
+    </div>
+  </div>
+}
+
+<!-- Resource table -->
+@if (!loading() && !error() && filtered().length > 0) {
+  <div class="card resource-table-card">
+    <div class="table-wrapper">
+      <table class="table" aria-label="Storage resources">
+        <thead>
+          <tr>
+            <th scope="col">Name</th>
+            <th scope="col">Type</th>
+            <th scope="col">Status</th>
+            <th scope="col">Health</th>
+            <th scope="col">Capacity</th>
+            <th scope="col">Updated</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (r of filtered(); track r.id; let i = $index) {
+            <tr
+              class="resource-row"
+              (click)="navigateTo(r.id)"
+              (keydown.enter)="navigateTo(r.id)"
+              tabindex="0"
+              [attr.aria-label]="r.name + ', status ' + r.status">
+              <td class="resource-row__name">
+                <span class="resource-name">{{ r.name }}</span>
+                <span class="resource-id">ID {{ r.id }}</span>
+              </td>
+              <td>
+                <span class="type-tag">{{ r.resource_type }}</span>
+              </td>
+              <td>
+                <ss-status-badge [status]="r.status"></ss-status-badge>
+              </td>
+              <td>
+                <ss-status-badge [status]="r.health_status"></ss-status-badge>
+              </td>
+              <td class="resource-row__capacity">
+                @if (r.capacity_total) {
+                  <div class="util-bar" [attr.aria-label]="utilPercent(r) + '% utilised'">
+                    <div class="util-bar__track" role="progressbar"
+                      [attr.aria-valuenow]="utilPercent(r)"
+                      aria-valuemin="0"
+                      aria-valuemax="100">
+                      <div
+                        class="util-bar__fill"
+                        [class]="utilClass(r)"
+                        [style.width.%]="utilPercent(r)">
+                      </div>
+                    </div>
+                    <span class="util-bar__label">
+                      {{ formatCapacity(r.capacity_used) }} / {{ formatCapacity(r.capacity_total) }}
+                      <span class="util-pct">{{ utilPercent(r) }}%</span>
+                    </span>
+                  </div>
+                } @else {
+                  <span class="no-capacity">—</span>
+                }
+              </td>
+              <td class="resource-row__time">
+                {{ r.updated_at | relativeTime }}
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="table-footer">
+      <span class="table-footer__count">
+        {{ filtered().length }} {{ filtered().length === 1 ? 'resource' : 'resources' }}
+        @if (hasActiveFilters()) { (filtered) }
+      </span>
+    </div>
+  </div>
+}

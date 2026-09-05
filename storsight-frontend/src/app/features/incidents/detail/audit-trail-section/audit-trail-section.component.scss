@@ -1,0 +1,26 @@
+// Audit Trail section — component-scoped styles.
+// Global layout (.intel-section, .section-header, etc.) live in src/styles/_sections.scss.
+
+.audit-action {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--color-text);
+  text-transform: capitalize;
+}
+
+.audit-details {
+  margin-top: var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  word-break: break-word;
+}
+
+.meta-label {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  margin-right: var(--space-3);
+}
+
+.retry-row {
+  margin-top: var(--space-2);
+}

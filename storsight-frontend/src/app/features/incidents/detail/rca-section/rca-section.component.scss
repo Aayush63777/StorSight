@@ -1,0 +1,101 @@
+.retry-row { margin-top: var(--space-3); }
+
+.intel-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.intel-card {
+  padding: var(--space-4) var(--space-5);
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+    margin-bottom: var(--space-3);
+  }
+
+  &__category {
+    font-family: var(--font-mono);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-primary);
+  }
+
+  &__explanation {
+    font-size: var(--font-size-sm);
+    color: var(--color-text);
+    line-height: 1.6;
+    margin: 0 0 var(--space-3);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  &__meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+  }
+}
+
+.confidence-badge {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  padding: 0.2em 0.6em;
+  border-radius: var(--radius-full);
+
+  &--high   { background: var(--color-severity-low-bg);    color: var(--color-severity-low-text); }
+  &--medium { background: var(--color-severity-medium-bg); color: var(--color-severity-medium-text); }
+  &--low    { background: var(--color-severity-unknown-bg); color: var(--color-severity-unknown-text); }
+}
+
+.mono-sm {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-subtle);
+}
+
+.time-muted {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-subtle);
+}
+
+.intel-form {
+  padding: var(--space-4) var(--space-5);
+  margin-bottom: var(--space-4);
+  border-left: 3px solid var(--color-primary);
+
+  &__title {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-text);
+    margin: 0 0 var(--space-4);
+  }
+}
+
+.req { color: var(--color-severity-critical); margin-left: 0.2rem; }
+
+.field-hint {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-subtle);
+  font-weight: 400;
+  margin-left: var(--space-1);
+}
+
+.form-actions {
+  display: flex;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+  flex-wrap: wrap;
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+    .btn { width: 100%; justify-content: center; }
+  }
+}

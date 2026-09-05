@@ -1,0 +1,129 @@
+@if (loading()) {
+  <ss-loading-spinner label="Loading alert…"></ss-loading-spinner>
+}
+
+@if (!loading() && error()) {
+  <div class="detail-error">
+    <ss-error-banner [message]="error()"></ss-error-banner>
+    <a class="btn btn--ghost" routerLink="/alerts">← Back to Alerts</a>
+  </div>
+}
+
+@if (!loading() && alert(); as a) {
+  <ss-page-header [title]="a.title" subtitle="Alert detail">
+    <a class="btn btn--ghost" routerLink="/alerts" aria-label="Back to alerts list">← Back</a>
+    @if (a.status === 'active') {
+      <button
+        class="btn btn--danger"
+        (click)="showConfirm.set(true)"
+        [disabled]="resolving()"
+        [attr.aria-busy]="resolving()"
+        aria-label="Resolve this alert">
+        {{ resolving() ? 'Resolving…' : 'Resolve Alert' }}
+      </button>
+    }
+  </ss-page-header>
+
+  @if (resolveError()) {
+    <ss-error-banner
+      [message]="resolveError()"
+      [dismissible]="true"
+      (dismissed)="resolveError.set(null)">
+    </ss-error-banner>
+  }
+
+  <div class="detail-grid">
+
+    <!-- Status card -->
+    <section class="card detail-card detail-card--status" aria-labelledby="alert-status-title">
+      <h2 class="detail-card__title" id="alert-status-title">Status</h2>
+      <div class="status-display">
+        <ss-severity-badge [severity]="a.severity"></ss-severity-badge>
+        <ss-status-badge [status]="a.status"></ss-status-badge>
+      </div>
+      @if (a.status === 'resolved' && a.resolved_at) {
+        <p class="resolved-note">Resolved {{ a.resolved_at | relativeTime }}</p>
+      }
+    </section>
+
+    <!-- Details card -->
+    <section class="card detail-card" aria-labelledby="alert-details-title">
+      <h2 class="detail-card__title" id="alert-details-title">Details</h2>
+      <dl class="info-list">
+        <div class="info-item">
+          <dt>Alert ID</dt>
+          <dd class="mono">{{ a.id }}</dd>
+        </div>
+        <div class="info-item">
+          <dt>Title</dt>
+          <dd>{{ a.title }}</dd>
+        </div>
+        <div class="info-item">
+          <dt>Created</dt>
+          <dd>{{ a.created_at | relativeTime }}</dd>
+        </div>
+        @if (a.resolved_at) {
+          <div class="info-item">
+            <dt>Resolved</dt>
+            <dd>{{ a.resolved_at | relativeTime }}</dd>
+          </div>
+        }
+      </dl>
+    </section>
+
+    <!-- Message card (full-width if present) -->
+    @if (a.message) {
+      <section class="card detail-card detail-card--message" aria-labelledby="alert-message-title">
+        <h2 class="detail-card__title" id="alert-message-title">Message</h2>
+        <p class="alert-message">{{ a.message }}</p>
+      </section>
+    }
+
+    <!-- Resource card -->
+    <section class="card detail-card" aria-labelledby="alert-resource-title">
+      <h2 class="detail-card__title" id="alert-resource-title">Storage Resource</h2>
+      <dl class="info-list">
+        <div class="info-item">
+          <dt>Resource ID</dt>
+          <dd class="mono">{{ a.resource_id }}</dd>
+        </div>
+        <div class="info-item">
+          <dt>Name</dt>
+          <dd>
+            @if (resource()) {
+              <a
+                class="resource-link"
+                [routerLink]="['/storage-resources', a.resource_id]"
+                [attr.aria-label]="'View resource ' + resource()!.name">
+                {{ resource()!.name }}
+              </a>
+            } @else {
+              <span class="text-muted">Resource {{ a.resource_id }}</span>
+            }
+          </dd>
+        </div>
+        @if (resource()) {
+          <div class="info-item">
+            <dt>Type</dt>
+            <dd><span class="type-tag">{{ resource()!.resource_type }}</span></dd>
+          </div>
+          <div class="info-item">
+            <dt>Status</dt>
+            <dd>{{ resource()!.status }}</dd>
+          </div>
+        }
+      </dl>
+    </section>
+
+  </div>
+
+  <!-- Resolve confirmation -->
+  <ss-confirm-dialog
+    [open]="showConfirm()"
+    title="Resolve Alert"
+    [message]="'Mark &quot;' + a.title + '&quot; as resolved? This action cannot be undone.'"
+    confirmLabel="Resolve"
+    (confirmed)="onResolveConfirmed()"
+    (cancelled)="showConfirm.set(false)">
+  </ss-confirm-dialog>
+}

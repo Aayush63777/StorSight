@@ -1,0 +1,145 @@
+@if (loading()) {
+  <ss-loading-spinner label="Loading resource…"></ss-loading-spinner>
+}
+
+@if (!loading() && error()) {
+  <div class="detail-error">
+    <ss-error-banner [message]="error()"></ss-error-banner>
+    <div class="detail-error__actions">
+      <a class="btn btn--ghost" routerLink="/storage-resources">← Back to list</a>
+    </div>
+  </div>
+}
+
+@if (!loading() && resource(); as r) {
+  <!-- Page header -->
+  <ss-page-header [title]="r.name" subtitle="Storage resource details">
+    <a
+      class="btn btn--ghost"
+      [routerLink]="['/storage-resources', r.id, 'edit']"
+      [attr.aria-label]="'Edit ' + r.name">
+      Edit
+    </a>
+    <button
+      class="btn btn--danger"
+      (click)="showDeleteDialog.set(true)"
+      [disabled]="deleting()"
+      [attr.aria-busy]="deleting()"
+      [attr.aria-label]="'Delete ' + r.name">
+      {{ deleting() ? 'Deleting…' : 'Delete' }}
+    </button>
+  </ss-page-header>
+
+  <!-- Delete error -->
+  @if (deleteError()) {
+    <ss-error-banner
+      [message]="deleteError()"
+      [dismissible]="true"
+      (dismissed)="deleteError.set(null)">
+    </ss-error-banner>
+  }
+
+  <div class="detail-grid">
+
+    <!-- Overview card -->
+    <section class="card detail-card" aria-labelledby="overview-title">
+      <h2 class="detail-card__title" id="overview-title">Overview</h2>
+      <dl class="info-list">
+        <div class="info-item">
+          <dt>Name</dt>
+          <dd>{{ r.name }}</dd>
+        </div>
+        <div class="info-item">
+          <dt>Resource ID</dt>
+          <dd class="mono">{{ r.id }}</dd>
+        </div>
+        <div class="info-item">
+          <dt>Type</dt>
+          <dd><span class="type-tag">{{ r.resource_type }}</span></dd>
+        </div>
+        <div class="info-item">
+          <dt>Operational status</dt>
+          <dd><ss-status-badge [status]="r.status"></ss-status-badge></dd>
+        </div>
+        <div class="info-item">
+          <dt>Health status</dt>
+          <dd><ss-status-badge [status]="r.health_status"></ss-status-badge></dd>
+        </div>
+      </dl>
+    </section>
+
+    <!-- Capacity card -->
+    <section class="card detail-card" aria-labelledby="capacity-title">
+      <h2 class="detail-card__title" id="capacity-title">Capacity</h2>
+
+      @if (!r.capacity_total) {
+        <p class="no-data">No capacity information recorded.</p>
+      } @else {
+        <!-- Utilisation bar -->
+        <div class="capacity-visual">
+          <div class="capacity-visual__header">
+            <span class="capacity-visual__label">Utilisation</span>
+            <span
+              class="capacity-visual__pct"
+              [class.capacity-visual__pct--warn]="utilPercent(r) >= 75"
+              [class.capacity-visual__pct--critical]="utilPercent(r) >= 90">
+              {{ utilPercent(r) }}%
+            </span>
+          </div>
+          <div class="util-bar__track" role="progressbar"
+            [attr.aria-valuenow]="utilPercent(r)"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            [attr.aria-label]="utilPercent(r) + '% capacity used'">
+            <div
+              class="util-bar__fill"
+              [class]="utilClass(r)"
+              [style.width.%]="utilPercent(r)">
+            </div>
+          </div>
+        </div>
+
+        <dl class="info-list" style="margin-top:1.25rem">
+          <div class="info-item">
+            <dt>Total capacity</dt>
+            <dd>{{ formatCapacity(r.capacity_total) }}</dd>
+          </div>
+          <div class="info-item">
+            <dt>Used capacity</dt>
+            <dd>{{ formatCapacity(r.capacity_used) }}</dd>
+          </div>
+          <div class="info-item">
+            <dt>Available capacity</dt>
+            <dd>{{ availableCapacity(r) }}</dd>
+          </div>
+        </dl>
+      }
+    </section>
+
+    <!-- Metadata card -->
+    <section class="card detail-card" aria-labelledby="metadata-title">
+      <h2 class="detail-card__title" id="metadata-title">Metadata</h2>
+      <dl class="info-list">
+        <div class="info-item">
+          <dt>Created</dt>
+          <dd>{{ r.created_at | relativeTime }}</dd>
+        </div>
+        <div class="info-item">
+          <dt>Last updated</dt>
+          <dd>{{ r.updated_at | relativeTime }}</dd>
+        </div>
+      </dl>
+    </section>
+
+  </div>
+
+  <!-- Delete confirmation -->
+  <ss-confirm-dialog
+    [open]="showDeleteDialog()"
+    title="Delete Storage Resource"
+    [message]="'Are you sure you want to delete &quot;' + r.name + '&quot;? This will also remove all associated metrics, events, and alerts. This action cannot be undone.'"
+    confirmLabel="Delete"
+    (confirmed)="onDeleteConfirmed()"
+    (cancelled)="showDeleteDialog.set(false)">
+  </ss-confirm-dialog>
+}

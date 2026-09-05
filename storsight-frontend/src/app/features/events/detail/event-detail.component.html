@@ -1,0 +1,105 @@
+@if (loading()) {
+  <ss-loading-spinner label="Loading event…"></ss-loading-spinner>
+}
+
+@if (!loading() && error()) {
+  <div class="detail-error">
+    <ss-error-banner [message]="error()"></ss-error-banner>
+    <a class="btn btn--ghost back-link" routerLink="/events">← Back to Events</a>
+  </div>
+}
+
+@if (!loading() && event(); as e) {
+  <ss-page-header [title]="e.event_type" subtitle="Event detail">
+    <a class="btn btn--ghost" routerLink="/events" aria-label="Back to events list">
+      ← Back
+    </a>
+  </ss-page-header>
+
+  <div class="detail-grid">
+
+    <!-- Severity + overview card -->
+    <section
+      class="card detail-card detail-card--hero"
+      [class]="'detail-card--hero ' + severityAccentClass(e.severity)"
+      aria-labelledby="event-overview-title">
+      <h2 class="detail-card__title" id="event-overview-title">Event Overview</h2>
+
+      <div class="event-hero">
+        <div class="event-hero__severity">
+          <ss-severity-badge [severity]="e.severity"></ss-severity-badge>
+        </div>
+        <div class="event-hero__type">{{ e.event_type }}</div>
+        <div class="event-hero__time">
+          {{ e.occurred_at | relativeTime }}
+        </div>
+      </div>
+    </section>
+
+    <!-- Message card -->
+    <section class="card detail-card detail-card--message" aria-labelledby="event-message-title">
+      <h2 class="detail-card__title" id="event-message-title">Message</h2>
+      <p class="event-message" aria-label="Event message">{{ e.message }}</p>
+    </section>
+
+    <!-- Metadata card -->
+    <section class="card detail-card" aria-labelledby="event-meta-title">
+      <h2 class="detail-card__title" id="event-meta-title">Details</h2>
+      <dl class="info-list">
+        <div class="info-item">
+          <dt>Event ID</dt>
+          <dd class="mono">{{ e.id }}</dd>
+        </div>
+        <div class="info-item">
+          <dt>Event type</dt>
+          <dd class="mono">{{ e.event_type }}</dd>
+        </div>
+        <div class="info-item">
+          <dt>Severity</dt>
+          <dd><ss-severity-badge [severity]="e.severity"></ss-severity-badge></dd>
+        </div>
+        <div class="info-item">
+          <dt>Occurred</dt>
+          <dd>{{ e.occurred_at | relativeTime }}</dd>
+        </div>
+      </dl>
+    </section>
+
+    <!-- Resource card -->
+    <section class="card detail-card" aria-labelledby="event-resource-title">
+      <h2 class="detail-card__title" id="event-resource-title">Storage Resource</h2>
+      <dl class="info-list">
+        <div class="info-item">
+          <dt>Resource ID</dt>
+          <dd class="mono">{{ e.resource_id }}</dd>
+        </div>
+        <div class="info-item">
+          <dt>Name</dt>
+          <dd>
+            @if (resource()) {
+              <a
+                class="resource-link"
+                [routerLink]="['/storage-resources', e.resource_id]"
+                [attr.aria-label]="'View resource ' + resource()!.name">
+                {{ resource()!.name }}
+              </a>
+            } @else {
+              <span class="text-muted">Resource {{ e.resource_id }}</span>
+            }
+          </dd>
+        </div>
+        @if (resource()) {
+          <div class="info-item">
+            <dt>Type</dt>
+            <dd><span class="type-tag">{{ resource()!.resource_type }}</span></dd>
+          </div>
+          <div class="info-item">
+            <dt>Status</dt>
+            <dd>{{ resource()!.status }}</dd>
+          </div>
+        }
+      </dl>
+    </section>
+
+  </div>
+}

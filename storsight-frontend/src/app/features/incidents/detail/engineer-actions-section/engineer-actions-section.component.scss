@@ -1,0 +1,52 @@
+// Engineer Actions section — component-scoped styles.
+// Global layout (.intel-section, .section-header, etc.) live in src/styles/_sections.scss.
+
+.actions-timeline__entry {
+  position: relative;
+  padding-left: var(--space-4);
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.6rem;
+    width: 3px;
+    bottom: 0;
+    background: var(--color-border);
+    border-radius: 2px;
+  }
+}
+
+// Action-type badge
+.action-badge {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  text-transform: capitalize;
+  background: var(--color-surface-2);
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+}
+
+.action-badge--investigation { color: #60a5fa; border-color: #60a5fa33; background: #60a5fa14; }
+.action-badge--diagnosis     { color: #a78bfa; border-color: #a78bfa33; background: #a78bfa14; }
+.action-badge--remediation   { color: #34d399; border-color: #34d39933; background: #34d39914; }
+.action-badge--escalation    { color: #f87171; border-color: #f8717133; background: #f8717114; }
+.action-badge--monitoring    { color: #fbbf24; border-color: #fbbf2433; background: #fbbf2414; }
+.action-badge--note          { color: var(--color-text-muted); }
+
+.meta-label {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  margin-right: var(--space-3);
+}
+
+.meta-label--rec {
+  color: #a78bfa;
+}
+
+.retry-row {
+  margin-top: var(--space-2);
+}

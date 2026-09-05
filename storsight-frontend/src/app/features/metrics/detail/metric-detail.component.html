@@ -1,0 +1,90 @@
+@if (loading()) {
+  <ss-loading-spinner label="Loading metric…"></ss-loading-spinner>
+}
+
+@if (!loading() && error()) {
+  <div class="detail-error">
+    <ss-error-banner [message]="error()"></ss-error-banner>
+    <a class="btn btn--ghost back-link" routerLink="/metrics">← Back to Metrics</a>
+  </div>
+}
+
+@if (!loading() && metric(); as m) {
+  <ss-page-header [title]="m.metric_name" subtitle="Metric detail">
+    <a class="btn btn--ghost" routerLink="/metrics" aria-label="Back to metrics list">
+      ← Back
+    </a>
+  </ss-page-header>
+
+  <div class="detail-grid">
+
+    <!-- Value card (prominent) -->
+    <section class="card detail-card detail-card--value" aria-labelledby="value-title">
+      <h2 class="detail-card__title" id="value-title">Current Value</h2>
+      <div class="metric-value-display" [attr.aria-label]="'Value: ' + formatValue(m)">
+        <span class="metric-value-display__number">
+          {{ Number.isInteger(m.metric_value) ? m.metric_value : m.metric_value.toFixed(4) }}
+        </span>
+        @if (m.unit) {
+          <span class="metric-value-display__unit">{{ m.unit }}</span>
+        }
+      </div>
+    </section>
+
+    <!-- Metadata card -->
+    <section class="card detail-card" aria-labelledby="meta-title">
+      <h2 class="detail-card__title" id="meta-title">Details</h2>
+      <dl class="info-list">
+        <div class="info-item">
+          <dt>Metric name</dt>
+          <dd class="mono">{{ m.metric_name }}</dd>
+        </div>
+        <div class="info-item">
+          <dt>Metric ID</dt>
+          <dd class="mono">{{ m.id }}</dd>
+        </div>
+        <div class="info-item">
+          <dt>Unit</dt>
+          <dd>{{ m.unit ?? '—' }}</dd>
+        </div>
+        <div class="info-item">
+          <dt>Recorded</dt>
+          <dd>{{ m.recorded_at | relativeTime }}</dd>
+        </div>
+      </dl>
+    </section>
+
+    <!-- Resource card -->
+    <section class="card detail-card" aria-labelledby="resource-title">
+      <h2 class="detail-card__title" id="resource-title">Storage Resource</h2>
+      <dl class="info-list">
+        <div class="info-item">
+          <dt>Resource ID</dt>
+          <dd class="mono">{{ m.resource_id }}</dd>
+        </div>
+        <div class="info-item">
+          <dt>Name</dt>
+          <dd>
+            @if (resource()) {
+              <a
+                class="resource-link"
+                [routerLink]="['/storage-resources', m.resource_id]"
+                [attr.aria-label]="'View resource ' + resource()!.name">
+                {{ resource()!.name }}
+              </a>
+            } @else {
+              <span class="text-muted">Resource {{ m.resource_id }}</span>
+            }
+          </dd>
+        </div>
+        @if (resource()) {
+          <div class="info-item">
+            <dt>Type</dt>
+            <dd><span class="type-tag">{{ resource()!.resource_type }}</span></dd>
+          </div>
+        }
+      </dl>
+    </section>
+
+  </div>
+}

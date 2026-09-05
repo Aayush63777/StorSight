@@ -1,0 +1,256 @@
+@if (loading()) {
+  <ss-loading-spinner label="Loading incident…"></ss-loading-spinner>
+}
+
+@if (!loading() && error()) {
+  <div class="detail-error">
+    <ss-error-banner [message]="error()"></ss-error-banner>
+    <a class="btn btn--ghost" routerLink="/incidents">← Back to Incidents</a>
+  </div>
+}
+
+@if (!loading() && incident(); as inc) {
+
+  <!-- Page header -->
+  <ss-page-header [title]="inc.title" subtitle="Incident detail">
+    <a class="btn btn--ghost" routerLink="/incidents" aria-label="Back to incidents">← Back</a>
+    @if (isResolvable) {
+      <button
+        class="btn btn--danger"
+        (click)="showResolveConfirm.set(true)"
+        [disabled]="resolving()"
+        [attr.aria-busy]="resolving()"
+        aria-label="Resolve this incident">
+        {{ resolving() ? 'Resolving…' : 'Resolve' }}
+      </button>
+    }
+    <button
+      class="btn btn--ghost"
+      (click)="toggleAssignForm()"
+      aria-label="Assign incident">
+      Assign
+    </button>
+  </ss-page-header>
+
+  <!-- Action errors -->
+  @if (resolveError()) {
+    <ss-error-banner
+      [message]="resolveError()"
+      [dismissible]="true"
+      (dismissed)="resolveError.set(null)">
+    </ss-error-banner>
+  }
+
+  <!-- Assign form (inline toggle) -->
+  @if (showAssignForm()) {
+    <div class="assign-panel card">
+      <h3 class="assign-panel__title">Assign Incident</h3>
+      <form [formGroup]="assignForm" (ngSubmit)="onAssignSubmit()" novalidate aria-label="Assign incident form">
+        <div class="assign-panel__row">
+          <div class="form-group" style="margin:0;flex:1">
+            <label for="assignee-id" class="sr-only">Assignee user ID</label>
+            <input
+              id="assignee-id"
+              type="number"
+              class="form-control"
+              formControlName="assignee_id"
+              placeholder="User ID (e.g. 3)"
+              min="1"
+              aria-required="true" />
+          </div>
+          <button
+            type="submit"
+            class="btn btn--primary"
+            [disabled]="assignForm.invalid || assigning()"
+            [attr.aria-busy]="assigning()">
+            {{ assigning() ? 'Assigning…' : 'Assign' }}
+          </button>
+          <button type="button" class="btn btn--ghost" (click)="showAssignForm.set(false)">
+            Cancel
+          </button>
+        </div>
+        @if (assignError()) {
+          <p class="form-error" style="margin-top:var(--space-2)" role="alert">{{ assignError() }}</p>
+        }
+      </form>
+    </div>
+  }
+
+  <!-- Detail grid -->
+  <div class="detail-grid">
+
+    <!-- Overview -->
+    <section class="card detail-card detail-card--overview" aria-labelledby="inc-overview-title">
+      <h2 class="detail-card__title" id="inc-overview-title">Overview</h2>
+      <div class="status-row">
+        <ss-severity-badge [severity]="inc.severity"></ss-severity-badge>
+        <ss-status-badge [status]="inc.status"></ss-status-badge>
+      </div>
+      <dl class="info-list" style="margin-top:var(--space-4)">
+        <div class="info-item">
+          <dt>Incident ID</dt>
+          <dd class="mono">{{ inc.id }}</dd>
+        </div>
+        @if (inc.assignee_id) {
+          <div class="info-item">
+            <dt>Assignee</dt>
+            <dd class="mono">User {{ inc.assignee_id }}</dd>
+          </div>
+        } @else {
+          <div class="info-item">
+            <dt>Assignee</dt>
+            <dd class="text-muted">Unassigned</dd>
+          </div>
+        }
+        <div class="info-item">
+          <dt>Created</dt>
+          <dd>{{ inc.created_at | relativeTime }}</dd>
+        </div>
+        <div class="info-item">
+          <dt>Updated</dt>
+          <dd>{{ inc.updated_at | relativeTime }}</dd>
+        </div>
+        @if (inc.resolved_at) {
+          <div class="info-item">
+            <dt>Resolved</dt>
+            <dd class="resolved-text">{{ inc.resolved_at | relativeTime }}</dd>
+          </div>
+        }
+      </dl>
+    </section>
+
+    <!-- Description -->
+    @if (inc.description) {
+      <section class="card detail-card detail-card--desc" aria-labelledby="inc-desc-title">
+        <h2 class="detail-card__title" id="inc-desc-title">Description</h2>
+        <p class="incident-description">{{ inc.description }}</p>
+      </section>
+    }
+
+  </div>
+
+  <!-- Correlated Events section -->
+  <section class="correlated-section" aria-labelledby="correlated-title">
+    <header class="section-header">
+      <h2 class="section-title" id="correlated-title">Correlated Events</h2>
+      <span class="section-count">{{ correlatedLinks().length }}</span>
+    </header>
+
+    @if (correlatedLinks().length === 0) {
+      <div class="card" style="padding:0">
+        <ss-empty-state
+          icon="⚡"
+          message="No correlated events"
+          subMessage="No events have been linked to this incident.">
+        </ss-empty-state>
+      </div>
+    } @else {
+      <div class="card correlated-card">
+        <div class="table-wrapper">
+          <table class="table" aria-label="Correlated events">
+            <thead>
+              <tr>
+                <th scope="col">Severity</th>
+                <th scope="col">Event type</th>
+                <th scope="col">Message</th>
+                <th scope="col">Resource</th>
+                <th scope="col">Occurred</th>
+                <th scope="col">Relationship</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (link of correlatedLinks(); track link.id) {
+                @if (getEvent(link.event_id); as ev) {
+                  <tr class="event-row">
+                    <td><ss-severity-badge [severity]="ev.severity"></ss-severity-badge></td>
+                    <td>
+                      <a
+                        class="event-type-link"
+                        [routerLink]="['/events', ev.id]"
+                        [attr.aria-label]="'View event ' + ev.event_type">
+                        {{ ev.event_type }}
+                      </a>
+                    </td>
+                    <td class="event-message-cell">{{ ev.message }}</td>
+                    <td>
+                      <a
+                        class="resource-link"
+                        [routerLink]="['/storage-resources', ev.resource_id]"
+                        [attr.aria-label]="'View resource ' + getResourceName(ev.resource_id)">
+                        {{ getResourceName(ev.resource_id) }}
+                      </a>
+                    </td>
+                    <td class="time-cell">{{ ev.occurred_at | relativeTime }}</td>
+                    <td><span class="rel-type">{{ link.relationship_type }}</span></td>
+                  </tr>
+                } @else {
+                  <tr class="event-row event-row--loading">
+                    <td colspan="6" class="text-muted">Event {{ link.event_id }} unavailable</td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+  </section>
+
+  <!-- Resolve confirmation -->
+  <ss-confirm-dialog
+    [open]="showResolveConfirm()"
+    title="Resolve Incident"
+    [message]="'Mark &quot;' + inc.title + '&quot; as resolved? This will record the resolution and cannot be undone.'"
+    confirmLabel="Resolve"
+    (confirmed)="onResolveConfirmed()"
+    (cancelled)="showResolveConfirm.set(false)">
+  </ss-confirm-dialog>
+
+  <!-- ── Phase 10.8: Intelligence sections ── -->
+
+  <!-- Risk Score -->
+  <ss-risk-score-section
+    [loading]="riskLoading()"
+    [error]="riskError()"
+    [data]="riskScore()"
+    (retry)="retryRisk()">
+  </ss-risk-score-section>
+
+  <!-- RCA -->
+  <ss-rca-section
+    [incidentId]="inc.id"
+    [loading]="rcaLoading()"
+    [error]="rcaError()"
+    [items]="rcaItems()"
+    (retry)="retryRca()">
+  </ss-rca-section>
+
+  <!-- Recommendations -->
+  <ss-recommendations-section
+    [incidentId]="inc.id"
+    [loading]="recLoading()"
+    [error]="recError()"
+    [items]="recItems()"
+    (retry)="retryRec()">
+  </ss-recommendations-section>
+
+  <!-- ── Phase 10.9: Engineer Actions + Audit Trail ── -->
+
+  <!-- Engineer Actions -->
+  <ss-engineer-actions-section
+    [incidentId]="inc.id"
+    [loading]="actionsLoading()"
+    [error]="actionsError()"
+    [items]="actionsItems()"
+    [recommendations]="recItems()"
+    (retry)="retryActions()">
+  </ss-engineer-actions-section>
+
+  <!-- Audit Trail -->
+  <ss-audit-trail-section
+    [loading]="auditLoading()"
+    [error]="auditError()"
+    [items]="auditItems()"
+    (retry)="retryAudit()">
+  </ss-audit-trail-section>
+}

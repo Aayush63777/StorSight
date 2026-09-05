@@ -1,0 +1,140 @@
+<ss-page-header
+  title="Incidents"
+  subtitle="Operational incident management">
+</ss-page-header>
+
+<!-- Filter bar -->
+<div class="filter-bar">
+
+  <div class="filter-bar__field">
+    <label for="inc-status" class="sr-only">Filter by status</label>
+    <select
+      id="inc-status"
+      class="form-control filter-bar__select"
+      [value]="statusFilter()"
+      (change)="onStatusChange($any($event.target).value)"
+      aria-label="Filter incidents by status">
+      <option value="">All statuses</option>
+      @for (s of statuses; track s) {
+        <option [value]="s">{{ s }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="filter-bar__field">
+    <label for="inc-severity" class="sr-only">Filter by severity</label>
+    <select
+      id="inc-severity"
+      class="form-control filter-bar__select"
+      [value]="severityFilter()"
+      (change)="onSeverityChange($any($event.target).value)"
+      aria-label="Filter incidents by severity">
+      <option value="">All severities</option>
+      @for (s of severities; track s) {
+        <option [value]="s">{{ s }}</option>
+      }
+    </select>
+  </div>
+
+  @if (hasActiveFilters()) {
+    <button
+      class="btn btn--ghost filter-bar__clear"
+      (click)="clearFilters()"
+      aria-label="Clear all filters">
+      ✕ Clear
+    </button>
+  }
+</div>
+
+<!-- Loading -->
+@if (loading()) {
+  <ss-loading-spinner label="Loading incidents…"></ss-loading-spinner>
+}
+
+<!-- Error -->
+@if (!loading() && error()) {
+  <ss-error-banner
+    [message]="error()"
+    [dismissible]="true"
+    (dismissed)="error.set(null)">
+  </ss-error-banner>
+  <div class="retry-row">
+    <button class="btn btn--ghost" (click)="loadIncidents()">Retry</button>
+  </div>
+}
+
+<!-- Empty -->
+@if (!loading() && !error() && incidents().length === 0) {
+  <div class="card empty-card">
+    <ss-empty-state
+      icon="🚨"
+      message="No incidents found"
+      [subMessage]="hasActiveFilters() ? 'No incidents match the selected filters.' : 'No incidents have been created yet.'">
+    </ss-empty-state>
+    @if (hasActiveFilters()) {
+      <div class="empty-card__action">
+        <button class="btn btn--ghost" (click)="clearFilters()">Clear Filters</button>
+      </div>
+    }
+  </div>
+}
+
+<!-- Incident table -->
+@if (!loading() && !error() && incidents().length > 0) {
+  <div class="card incidents-table-card">
+    <div class="table-wrapper">
+      <table class="table" aria-label="Operational incidents">
+        <thead>
+          <tr>
+            <th scope="col">Severity</th>
+            <th scope="col">Title</th>
+            <th scope="col">Status</th>
+            <th scope="col">Created</th>
+            <th scope="col">Updated</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (inc of incidents(); track inc.id) {
+            <tr
+              class="incident-row"
+              [class.incident-row--critical]="inc.severity === 'critical'"
+              [class.incident-row--resolved]="inc.status === 'resolved'"
+              (click)="navigateTo(inc.id)"
+              (keydown.enter)="navigateTo(inc.id)"
+              tabindex="0"
+              [attr.aria-label]="inc.title + ', ' + inc.severity + ', ' + inc.status">
+              <td class="incident-row__severity">
+                <ss-severity-badge [severity]="inc.severity"></ss-severity-badge>
+              </td>
+              <td class="incident-row__title">
+                <span class="incident-title">{{ inc.title }}</span>
+                @if (inc.description) {
+                  <span class="incident-desc">{{ inc.description }}</span>
+                }
+              </td>
+              <td>
+                <ss-status-badge [status]="inc.status"></ss-status-badge>
+              </td>
+              <td class="incident-row__time">
+                {{ inc.created_at | relativeTime }}
+              </td>
+              <td class="incident-row__time">
+                @if (inc.status === 'resolved' && inc.resolved_at) {
+                  <span class="resolved-time">Resolved {{ inc.resolved_at | relativeTime }}</span>
+                } @else {
+                  {{ inc.updated_at | relativeTime }}
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <div class="table-footer">
+      <span class="table-footer__count">
+        {{ incidents().length }} {{ incidents().length === 1 ? 'incident' : 'incidents' }}
+        @if (hasActiveFilters()) { (filtered) }
+      </span>
+    </div>
+  </div>
+}

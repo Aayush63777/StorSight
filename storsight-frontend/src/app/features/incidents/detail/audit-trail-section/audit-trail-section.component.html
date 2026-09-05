@@ -1,0 +1,53 @@
+<section class="intel-section" aria-labelledby="audit-title">
+  <header class="section-header">
+    <h2 class="section-title" id="audit-title">Audit Trail</h2>
+    <span class="section-count">{{ displayItems().length }}</span>
+  </header>
+
+  <!-- Loading -->
+  @if (loading) {
+    <ss-loading-spinner label="Loading audit trail…" size="sm"></ss-loading-spinner>
+  }
+
+  <!-- Section error -->
+  @if (!loading && error) {
+    <ss-error-banner [message]="error" [dismissible]="false"></ss-error-banner>
+    <div class="retry-row">
+      <button class="btn btn--ghost btn--sm" (click)="retry.emit()">Retry</button>
+    </div>
+  }
+
+  <!-- Empty state -->
+  @if (!loading && !error && displayItems().length === 0) {
+    <div class="card" style="padding:0">
+      <ss-empty-state
+        icon="📋"
+        message="No audit entries"
+        subMessage="Activity on this incident will appear here.">
+      </ss-empty-state>
+    </div>
+  }
+
+  <!-- Audit log list -->
+  @if (!loading && !error && displayItems().length > 0) {
+    <div class="intel-list audit-list">
+      @for (log of displayItems(); track log.id) {
+        <div class="intel-card card audit-entry">
+          <div class="intel-card__header">
+            <span class="audit-action">{{ formatAction(log.action) }}</span>
+            <span class="time-muted">{{ log.created_at | relativeTime }}</span>
+          </div>
+          <div class="intel-card__meta">
+            <span class="meta-label">User {{ log.user_id }}</span>
+            @if (log.entity_type) {
+              <span class="meta-label">{{ log.entity_type }} #{{ log.entity_id }}</span>
+            }
+          </div>
+          @if (log.details) {
+            <p class="audit-details">{{ log.details }}</p>
+          }
+        </div>
+      }
+    </div>
+  }
+</section>

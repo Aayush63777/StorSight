@@ -1,0 +1,132 @@
+<section class="intel-section" aria-labelledby="actions-title">
+  <header class="section-header">
+    <h2 class="section-title" id="actions-title">Engineer Actions</h2>
+    <span class="section-count">{{ displayItems().length }}</span>
+    @if (!loading && !error) {
+      <button
+        class="btn btn--ghost btn--sm"
+        (click)="toggleShowForm()"
+        [attr.aria-expanded]="showForm()"
+        aria-controls="actions-create-form">
+        {{ showForm() ? '✕ Cancel' : '+ Add Action' }}
+      </button>
+    }
+  </header>
+
+  <!-- Loading -->
+  @if (loading) {
+    <ss-loading-spinner label="Loading engineer actions…" size="sm"></ss-loading-spinner>
+  }
+
+  <!-- Section error -->
+  @if (!loading && error) {
+    <ss-error-banner [message]="error" [dismissible]="false"></ss-error-banner>
+    <div class="retry-row">
+      <button class="btn btn--ghost btn--sm" (click)="retry.emit()">Retry</button>
+    </div>
+  }
+
+  <!-- Create form -->
+  @if (!loading && !error && showForm()) {
+    <div class="intel-form card" id="actions-create-form" aria-label="Add engineer action">
+      <h3 class="intel-form__title">Add Action</h3>
+
+      @if (formError()) {
+        <ss-error-banner [message]="formError()" [dismissible]="true" (dismissed)="formError.set(null)"></ss-error-banner>
+      }
+
+      <form [formGroup]="createForm" (ngSubmit)="onCreateSubmit()" novalidate>
+
+        <div class="form-group">
+          <label for="action-type">Action type <span class="req" aria-hidden="true">*</span></label>
+          <select
+            id="action-type"
+            class="form-control"
+            [class.is-invalid]="!!fieldError('action_type')"
+            formControlName="action_type"
+            aria-required="true">
+            <option value="" disabled>Select action type…</option>
+            @for (t of actionTypes; track t) {
+              <option [value]="t">{{ t }}</option>
+            }
+          </select>
+          @if (fieldError('action_type')) {
+            <span class="form-error" role="alert">{{ fieldError('action_type') }}</span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="action-description">Description <span class="req" aria-hidden="true">*</span></label>
+          <textarea
+            id="action-description"
+            class="form-control"
+            [class.is-invalid]="!!fieldError('description')"
+            formControlName="description"
+            rows="3"
+            placeholder="Describe what was done…"
+            aria-required="true">
+          </textarea>
+          @if (fieldError('description')) {
+            <span class="form-error" role="alert">{{ fieldError('description') }}</span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="action-recommendation">Linked recommendation <span class="field-optional">(optional)</span></label>
+          <select
+            id="action-recommendation"
+            class="form-control"
+            formControlName="recommendation_id">
+            <option [value]="null">None</option>
+            @for (rec of recommendations; track rec.id) {
+              <option [value]="rec.id">{{ rec.title }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="form-actions">
+          <button
+            type="submit"
+            class="btn btn--primary"
+            [disabled]="createForm.invalid || saving()"
+            [attr.aria-busy]="saving()">
+            {{ saving() ? 'Saving…' : 'Save Action' }}
+          </button>
+          <button type="button" class="btn btn--ghost" (click)="showForm.set(false)">Cancel</button>
+        </div>
+      </form>
+    </div>
+  }
+
+  <!-- Empty state -->
+  @if (!loading && !error && displayItems().length === 0 && !showForm()) {
+    <div class="card" style="padding:0">
+      <ss-empty-state
+        icon="🔧"
+        message="No engineer actions"
+        subMessage="Record an action to document investigation progress.">
+      </ss-empty-state>
+    </div>
+  }
+
+  <!-- Actions timeline -->
+  @if (!loading && !error && displayItems().length > 0) {
+    <div class="intel-list actions-timeline">
+      @for (action of displayItems(); track action.id) {
+        <div class="intel-card card actions-timeline__entry">
+          <div class="intel-card__header">
+            <span class="action-badge action-badge--{{ action.action_type }}">{{ action.action_type }}</span>
+            <span class="time-muted">{{ action.created_at | relativeTime }}</span>
+          </div>
+          <p class="intel-card__body">{{ action.description }}</p>
+          <div class="intel-card__meta">
+            <span class="meta-label">User {{ action.user_id }}</span>
+            @if (action.recommendation_id) {
+              <span class="meta-label meta-label--rec">Rec #{{ action.recommendation_id }}</span>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+</section>

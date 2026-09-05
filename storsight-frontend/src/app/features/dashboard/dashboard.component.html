@@ -1,0 +1,464 @@
+<!-- ============================================================
+     StorSight Dashboard
+     ============================================================ -->
+
+<div class="dashboard">
+
+  <!-- ── Header ── -->
+  <header class="dashboard__header">
+    <div class="dashboard__header-text">
+      <h1 class="dashboard__title">Dashboard</h1>
+      <p class="dashboard__subtitle">Infrastructure operational overview</p>
+    </div>
+    <div class="dashboard__header-actions">
+      @if (lastUpdated()) {
+        <span class="dashboard__updated" aria-live="polite">
+          Updated {{ lastUpdated() | relativeTime }}
+        </span>
+      }
+      <button
+        class="btn btn--ghost"
+        (click)="loadDashboard()"
+        [disabled]="loading()"
+        aria-label="Refresh dashboard data">
+        <span aria-hidden="true">↺</span>
+        Refresh
+      </button>
+    </div>
+  </header>
+
+  <!-- ── Loading ── -->
+  @if (loading()) {
+    <ss-loading-spinner label="Loading dashboard…"></ss-loading-spinner>
+  }
+
+  <!-- ── Error ── -->
+  @if (!loading() && error()) {
+    <ss-error-banner
+      [message]="error()"
+      [dismissible]="true"
+      (dismissed)="error.set(null)">
+    </ss-error-banner>
+    <div class="dashboard__retry">
+      <button class="btn btn--primary" (click)="loadDashboard()">
+        Retry
+      </button>
+    </div>
+  }
+
+  <!-- ── Main content (only when loaded) ── -->
+  @if (!loading() && !error()) {
+
+    <!-- ── KPI cards ── -->
+    <section class="kpi-grid" aria-label="Key performance indicators">
+
+      <!-- Total Resources -->
+      <article class="kpi-card" aria-label="Total storage resources">
+        <div class="kpi-card__icon kpi-card__icon--blue" aria-hidden="true">▣</div>
+        <div class="kpi-card__body">
+          <div class="kpi-card__value">{{ totalResources() }}</div>
+          <div class="kpi-card__label">Total Resources</div>
+          <div class="kpi-card__sub">
+            <span class="kpi-card__sub--healthy">{{ resourcesByStatus().healthy }}</span>
+            healthy
+          </div>
+        </div>
+      </article>
+
+      <!-- Active Alerts -->
+      <article
+        class="kpi-card"
+        [class.kpi-card--alert]="activeAlerts() > 0"
+        aria-label="Active alerts">
+        <div
+          class="kpi-card__icon"
+          [class.kpi-card__icon--red]="activeAlerts() > 0"
+          [class.kpi-card__icon--muted]="activeAlerts() === 0"
+          aria-hidden="true">⚠</div>
+        <div class="kpi-card__body">
+          <div class="kpi-card__value" [class.kpi-card__value--critical]="activeAlerts() > 0">
+            {{ activeAlerts() }}
+          </div>
+          <div class="kpi-card__label">Active Alerts</div>
+          <div class="kpi-card__sub">
+            @if (activeAlertsBySeverity().critical > 0) {
+              <span class="kpi-card__sub--critical">
+                {{ activeAlertsBySeverity().critical }} critical
+              </span>
+            } @else {
+              <span class="kpi-card__sub--ok">None critical</span>
+            }
+          </div>
+        </div>
+      </article>
+
+      <!-- Open Incidents -->
+      <article
+        class="kpi-card"
+        [class.kpi-card--warn]="openIncidents() > 0"
+        aria-label="Open incidents">
+        <div
+          class="kpi-card__icon"
+          [class.kpi-card__icon--orange]="openIncidents() > 0"
+          [class.kpi-card__icon--muted]="openIncidents() === 0"
+          aria-hidden="true">⚡</div>
+        <div class="kpi-card__body">
+          <div class="kpi-card__value" [class.kpi-card__value--high]="openIncidents() > 0">
+            {{ openIncidents() }}
+          </div>
+          <div class="kpi-card__label">Open Incidents</div>
+          <div class="kpi-card__sub">
+            @if (openIncidentsBySeverity().high + openIncidentsBySeverity().critical > 0) {
+              <span class="kpi-card__sub--high">
+                {{ openIncidentsBySeverity().high + openIncidentsBySeverity().critical }} high+
+              </span>
+            } @else {
+              <span class="kpi-card__sub--ok">No high severity</span>
+            }
+          </div>
+        </div>
+      </article>
+
+      <!-- Critical Incidents -->
+      <article
+        class="kpi-card"
+        [class.kpi-card--critical]="criticalIncidents() > 0"
+        aria-label="Critical open incidents">
+        <div
+          class="kpi-card__icon"
+          [class.kpi-card__icon--red]="criticalIncidents() > 0"
+          [class.kpi-card__icon--muted]="criticalIncidents() === 0"
+          aria-hidden="true">🚨</div>
+        <div class="kpi-card__body">
+          <div class="kpi-card__value" [class.kpi-card__value--critical]="criticalIncidents() > 0">
+            {{ criticalIncidents() }}
+          </div>
+          <div class="kpi-card__label">Critical Incidents</div>
+          <div class="kpi-card__sub">
+            @if (criticalIncidents() === 0) {
+              <span class="kpi-card__sub--ok">All clear</span>
+            } @else {
+              <span class="kpi-card__sub--critical">Requires attention</span>
+            }
+          </div>
+        </div>
+      </article>
+
+    </section>
+
+    <!-- ── Second row: Health + Alerts + Incidents overview ── -->
+    <div class="overview-grid">
+
+      <!-- Infrastructure Health -->
+      <section class="card panel" aria-labelledby="health-title">
+        <header class="panel__header">
+          <h2 class="panel__title" id="health-title">Infrastructure Health</h2>
+          <span class="panel__meta">{{ totalResources() }} resources</span>
+        </header>
+
+        @if (totalResources() === 0) {
+          <ss-empty-state message="No resources found" icon="💾"></ss-empty-state>
+        } @else {
+          <div class="health-bars">
+
+            <div class="health-bar" [attr.aria-label]="'Healthy: ' + resourcesByStatus().healthy">
+              <div class="health-bar__row">
+                <span class="health-bar__label">
+                  <span class="health-dot health-dot--healthy" aria-hidden="true"></span>
+                  Healthy
+                </span>
+                <span class="health-bar__count">{{ resourcesByStatus().healthy }}</span>
+              </div>
+              <div class="health-bar__track" role="progressbar"
+                [attr.aria-valuenow]="resourcesByStatus().healthy"
+                [attr.aria-valuemax]="totalResources()">
+                <div class="health-bar__fill health-bar__fill--healthy"
+                  [style.width.%]="(resourcesByStatus().healthy / totalResources()) * 100">
+                </div>
+              </div>
+            </div>
+
+            <div class="health-bar" [attr.aria-label]="'Warning: ' + resourcesByStatus().warning">
+              <div class="health-bar__row">
+                <span class="health-bar__label">
+                  <span class="health-dot health-dot--warning" aria-hidden="true"></span>
+                  Warning
+                </span>
+                <span class="health-bar__count">{{ resourcesByStatus().warning }}</span>
+              </div>
+              <div class="health-bar__track" role="progressbar"
+                [attr.aria-valuenow]="resourcesByStatus().warning"
+                [attr.aria-valuemax]="totalResources()">
+                <div class="health-bar__fill health-bar__fill--warning"
+                  [style.width.%]="(resourcesByStatus().warning / totalResources()) * 100">
+                </div>
+              </div>
+            </div>
+
+            <div class="health-bar" [attr.aria-label]="'Critical: ' + resourcesByStatus().critical">
+              <div class="health-bar__row">
+                <span class="health-bar__label">
+                  <span class="health-dot health-dot--critical" aria-hidden="true"></span>
+                  Critical
+                </span>
+                <span class="health-bar__count">{{ resourcesByStatus().critical }}</span>
+              </div>
+              <div class="health-bar__track" role="progressbar"
+                [attr.aria-valuenow]="resourcesByStatus().critical"
+                [attr.aria-valuemax]="totalResources()">
+                <div class="health-bar__fill health-bar__fill--critical"
+                  [style.width.%]="(resourcesByStatus().critical / totalResources()) * 100">
+                </div>
+              </div>
+            </div>
+
+            <div class="health-bar" [attr.aria-label]="'Offline: ' + resourcesByStatus().offline">
+              <div class="health-bar__row">
+                <span class="health-bar__label">
+                  <span class="health-dot health-dot--offline" aria-hidden="true"></span>
+                  Offline
+                </span>
+                <span class="health-bar__count">{{ resourcesByStatus().offline }}</span>
+              </div>
+              <div class="health-bar__track" role="progressbar"
+                [attr.aria-valuenow]="resourcesByStatus().offline"
+                [attr.aria-valuemax]="totalResources()">
+                <div class="health-bar__fill health-bar__fill--offline"
+                  [style.width.%]="(resourcesByStatus().offline / totalResources()) * 100">
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="health-score" [attr.aria-label]="'Overall health: ' + healthPercent() + '%'">
+            <span class="health-score__number"
+              [class.health-score--ok]="healthPercent() >= 80"
+              [class.health-score--warn]="healthPercent() >= 50 && healthPercent() < 80"
+              [class.health-score--bad]="healthPercent() < 50">
+              {{ healthPercent() }}%
+            </span>
+            <span class="health-score__label">overall healthy</span>
+          </div>
+        }
+      </section>
+
+      <!-- Alert Overview -->
+      <section class="card panel" aria-labelledby="alerts-title">
+        <header class="panel__header">
+          <h2 class="panel__title" id="alerts-title">Alert Overview</h2>
+          <a class="panel__link" routerLink="/alerts" aria-label="View all alerts">
+            View all →
+          </a>
+        </header>
+
+        @if (activeAlerts() === 0) {
+          <ss-empty-state
+            message="No active alerts"
+            icon="✓"
+            subMessage="All clear">
+          </ss-empty-state>
+        } @else {
+          <div class="severity-summary">
+
+            <div class="severity-row severity-row--critical">
+              <span class="severity-row__dot" aria-hidden="true"></span>
+              <span class="severity-row__label">Critical</span>
+              <span class="severity-row__bar">
+                <span class="severity-row__fill severity-row__fill--critical"
+                  [style.width.%]="activeAlerts() ? (activeAlertsBySeverity().critical / activeAlerts()) * 100 : 0">
+                </span>
+              </span>
+              <span class="severity-row__count">{{ activeAlertsBySeverity().critical }}</span>
+            </div>
+
+            <div class="severity-row severity-row--warning">
+              <span class="severity-row__dot" aria-hidden="true"></span>
+              <span class="severity-row__label">Warning</span>
+              <span class="severity-row__bar">
+                <span class="severity-row__fill severity-row__fill--warning"
+                  [style.width.%]="activeAlerts() ? (activeAlertsBySeverity().warning / activeAlerts()) * 100 : 0">
+                </span>
+              </span>
+              <span class="severity-row__count">{{ activeAlertsBySeverity().warning }}</span>
+            </div>
+
+            <div class="severity-row severity-row--info">
+              <span class="severity-row__dot" aria-hidden="true"></span>
+              <span class="severity-row__label">Info</span>
+              <span class="severity-row__bar">
+                <span class="severity-row__fill severity-row__fill--info"
+                  [style.width.%]="activeAlerts() ? (activeAlertsBySeverity().info / activeAlerts()) * 100 : 0">
+                </span>
+              </span>
+              <span class="severity-row__count">{{ activeAlertsBySeverity().info }}</span>
+            </div>
+
+          </div>
+        }
+      </section>
+
+      <!-- Incident Overview -->
+      <section class="card panel" aria-labelledby="incidents-title">
+        <header class="panel__header">
+          <h2 class="panel__title" id="incidents-title">Incident Overview</h2>
+          <a class="panel__link" routerLink="/incidents" aria-label="View all incidents">
+            View all →
+          </a>
+        </header>
+
+        @if (openIncidents() === 0) {
+          <ss-empty-state
+            message="No open incidents"
+            icon="✓"
+            subMessage="System operating normally">
+          </ss-empty-state>
+        } @else {
+          <div class="severity-summary">
+
+            <div class="severity-row severity-row--critical">
+              <span class="severity-row__dot" aria-hidden="true"></span>
+              <span class="severity-row__label">Critical</span>
+              <span class="severity-row__bar">
+                <span class="severity-row__fill severity-row__fill--critical"
+                  [style.width.%]="openIncidents() ? (openIncidentsBySeverity().critical / openIncidents()) * 100 : 0">
+                </span>
+              </span>
+              <span class="severity-row__count">{{ openIncidentsBySeverity().critical }}</span>
+            </div>
+
+            <div class="severity-row severity-row--high">
+              <span class="severity-row__dot" aria-hidden="true"></span>
+              <span class="severity-row__label">High</span>
+              <span class="severity-row__bar">
+                <span class="severity-row__fill severity-row__fill--high"
+                  [style.width.%]="openIncidents() ? (openIncidentsBySeverity().high / openIncidents()) * 100 : 0">
+                </span>
+              </span>
+              <span class="severity-row__count">{{ openIncidentsBySeverity().high }}</span>
+            </div>
+
+            <div class="severity-row severity-row--medium">
+              <span class="severity-row__dot" aria-hidden="true"></span>
+              <span class="severity-row__label">Medium</span>
+              <span class="severity-row__bar">
+                <span class="severity-row__fill severity-row__fill--medium"
+                  [style.width.%]="openIncidents() ? (openIncidentsBySeverity().medium / openIncidents()) * 100 : 0">
+                </span>
+              </span>
+              <span class="severity-row__count">{{ openIncidentsBySeverity().medium }}</span>
+            </div>
+
+            <div class="severity-row severity-row--low">
+              <span class="severity-row__dot" aria-hidden="true"></span>
+              <span class="severity-row__label">Low</span>
+              <span class="severity-row__bar">
+                <span class="severity-row__fill severity-row__fill--low"
+                  [style.width.%]="openIncidents() ? (openIncidentsBySeverity().low / openIncidents()) * 100 : 0">
+                </span>
+              </span>
+              <span class="severity-row__count">{{ openIncidentsBySeverity().low }}</span>
+            </div>
+
+          </div>
+        }
+      </section>
+
+    </div><!-- /overview-grid -->
+
+    <!-- ── Bottom row: Recent lists ── -->
+    <div class="lists-grid">
+
+      <!-- Recent Incidents -->
+      <section class="card panel" aria-labelledby="recent-inc-title">
+        <header class="panel__header">
+          <h2 class="panel__title" id="recent-inc-title">Recent Incidents</h2>
+          <a class="panel__link" routerLink="/incidents">View all →</a>
+        </header>
+
+        @if (recentIncidents().length === 0) {
+          <ss-empty-state message="No incidents" icon="🚨"></ss-empty-state>
+        } @else {
+          <ul class="item-list" role="list">
+            @for (inc of recentIncidents(); track inc.id) {
+              <li class="item-list__row item-list__row--clickable"
+                role="listitem"
+                (click)="navigateToIncident(inc.id)"
+                (keydown.enter)="navigateToIncident(inc.id)"
+                tabindex="0"
+                [attr.aria-label]="inc.title + ', ' + inc.severity + ', ' + inc.status">
+                <div class="item-list__main">
+                  <div class="item-list__title">{{ inc.title }}</div>
+                  <div class="item-list__meta">
+                    {{ inc.created_at | relativeTime }}
+                  </div>
+                </div>
+                <div class="item-list__badges">
+                  <ss-severity-badge [severity]="inc.severity"></ss-severity-badge>
+                  <ss-status-badge [status]="inc.status"></ss-status-badge>
+                </div>
+              </li>
+            }
+          </ul>
+        }
+      </section>
+
+      <!-- Recent Events -->
+      <section class="card panel" aria-labelledby="recent-ev-title">
+        <header class="panel__header">
+          <h2 class="panel__title" id="recent-ev-title">Recent Events</h2>
+          <a class="panel__link" routerLink="/events">View all →</a>
+        </header>
+
+        @if (recentEvents().length === 0) {
+          <ss-empty-state message="No recent events" icon="⚡"></ss-empty-state>
+        } @else {
+          <ul class="item-list" role="list">
+            @for (ev of recentEvents(); track ev.id) {
+              <li class="item-list__row" role="listitem">
+                <div class="item-list__main">
+                  <div class="item-list__title">{{ ev.event_type }}</div>
+                  <div class="item-list__message">{{ ev.message }}</div>
+                  <div class="item-list__meta">{{ ev.occurred_at | relativeTime }}</div>
+                </div>
+                <ss-severity-badge [severity]="ev.severity"></ss-severity-badge>
+              </li>
+            }
+          </ul>
+        }
+      </section>
+
+      <!-- Recent Audit Activity -->
+      <section class="card panel" aria-labelledby="recent-audit-title">
+        <header class="panel__header">
+          <h2 class="panel__title" id="recent-audit-title">Recent Activity</h2>
+          <a class="panel__link" routerLink="/audit-logs">View all →</a>
+        </header>
+
+        @if (recentAuditLogs().length === 0) {
+          <ss-empty-state message="No recent activity" icon="📋"></ss-empty-state>
+        } @else {
+          <ul class="activity-list" role="list">
+            @for (log of recentAuditLogs(); track log.id) {
+              <li class="activity-item" role="listitem">
+                <span class="activity-item__dot" aria-hidden="true"></span>
+                <div class="activity-item__content">
+                  <div class="activity-item__action">{{ formatAction(log.action) }}</div>
+                  @if (log.entity_type && log.entity_id) {
+                    <div class="activity-item__entity">
+                      {{ log.entity_type }} #{{ log.entity_id }}
+                    </div>
+                  }
+                  <div class="activity-item__time">{{ log.created_at | relativeTime }}</div>
+                </div>
+              </li>
+            }
+          </ul>
+        }
+      </section>
+
+    </div><!-- /lists-grid -->
+
+  }<!-- /loaded -->
+
+</div><!-- /dashboard -->

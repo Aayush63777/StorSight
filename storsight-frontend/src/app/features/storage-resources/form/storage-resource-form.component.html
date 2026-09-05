@@ -1,0 +1,135 @@
+<ss-page-header [title]="title" [subtitle]="subtitle">
+</ss-page-header>
+
+@if (loading()) {
+  <ss-loading-spinner label="Loading resource…"></ss-loading-spinner>
+} @else {
+  <div class="form-card card">
+    <ss-error-banner
+      [message]="apiError()"
+      [dismissible]="true"
+      (dismissed)="apiError.set(null)">
+    </ss-error-banner>
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate aria-label="Storage resource form">
+
+      <!-- Name -->
+      <div class="form-group">
+        <label for="sr-name">Name <span class="required-mark" aria-hidden="true">*</span></label>
+        <input
+          id="sr-name"
+          type="text"
+          class="form-control"
+          [class.is-invalid]="!!fieldError('name')"
+          formControlName="name"
+          placeholder="e.g. storage-node-01"
+          autocomplete="off"
+          aria-required="true"
+          [attr.aria-describedby]="fieldError('name') ? 'sr-name-err' : null" />
+        @if (fieldError('name')) {
+          <span id="sr-name-err" class="form-error" role="alert">{{ fieldError('name') }}</span>
+        }
+      </div>
+
+      <!-- Resource Type -->
+      <div class="form-group">
+        <label for="sr-type">Resource type <span class="required-mark" aria-hidden="true">*</span></label>
+        <input
+          id="sr-type"
+          type="text"
+          class="form-control"
+          [class.is-invalid]="!!fieldError('resource_type')"
+          formControlName="resource_type"
+          placeholder="e.g. SAN, NAS, iSCSI"
+          autocomplete="off"
+          aria-required="true"
+          [attr.aria-describedby]="fieldError('resource_type') ? 'sr-type-err' : null" />
+        @if (fieldError('resource_type')) {
+          <span id="sr-type-err" class="form-error" role="alert">{{ fieldError('resource_type') }}</span>
+        }
+      </div>
+
+      <!-- Status + Health row -->
+      <div class="form-row">
+        <div class="form-group">
+          <label for="sr-status">Status <span class="required-mark" aria-hidden="true">*</span></label>
+          <select id="sr-status" class="form-control" formControlName="status" aria-required="true">
+            @for (s of statuses; track s) {
+              <option [value]="s">{{ s }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="sr-health">Health status <span class="required-mark" aria-hidden="true">*</span></label>
+          <select id="sr-health" class="form-control" formControlName="health_status" aria-required="true">
+            @for (h of healthStatuses; track h) {
+              <option [value]="h">{{ h }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      <!-- Capacity row -->
+      <div class="form-row">
+        <div class="form-group">
+          <label for="sr-cap-total">Total capacity (GB)</label>
+          <input
+            id="sr-cap-total"
+            type="number"
+            class="form-control"
+            [class.is-invalid]="!!fieldError('capacity_total') || !!capacityError"
+            formControlName="capacity_total"
+            placeholder="e.g. 2000"
+            min="0"
+            step="any"
+            [attr.aria-describedby]="fieldError('capacity_total') ? 'sr-cap-total-err' : null" />
+          @if (fieldError('capacity_total')) {
+            <span id="sr-cap-total-err" class="form-error" role="alert">{{ fieldError('capacity_total') }}</span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="sr-cap-used">Used capacity (GB)</label>
+          <input
+            id="sr-cap-used"
+            type="number"
+            class="form-control"
+            [class.is-invalid]="!!fieldError('capacity_used') || !!capacityError"
+            formControlName="capacity_used"
+            placeholder="e.g. 800"
+            min="0"
+            step="any"
+            [attr.aria-describedby]="fieldError('capacity_used') ? 'sr-cap-used-err' : null" />
+          @if (fieldError('capacity_used')) {
+            <span id="sr-cap-used-err" class="form-error" role="alert">{{ fieldError('capacity_used') }}</span>
+          }
+        </div>
+      </div>
+
+      <!-- Cross-field capacity error -->
+      @if (capacityError) {
+        <p class="form-error form-error--block" role="alert">{{ capacityError }}</p>
+      }
+
+      <!-- Actions -->
+      <div class="form-actions">
+        <button
+          type="button"
+          class="btn btn--ghost"
+          (click)="onCancel()"
+          [disabled]="saving()">
+          Cancel
+        </button>
+        <button
+          type="submit"
+          class="btn btn--primary"
+          [disabled]="saving() || form.invalid"
+          [attr.aria-busy]="saving()">
+          {{ submitLabel }}
+        </button>
+      </div>
+
+    </form>
+  </div>
+}

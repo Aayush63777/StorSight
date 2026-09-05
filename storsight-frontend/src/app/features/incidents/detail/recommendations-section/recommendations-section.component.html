@@ -1,0 +1,131 @@
+<section class="intel-section" aria-labelledby="rec-title">
+  <header class="section-header">
+    <h2 class="section-title" id="rec-title">Recommendations</h2>
+    <span class="section-count">{{ displayItems().length }}</span>
+    @if (!loading && !error) {
+        <button
+        class="btn btn--ghost btn--sm"
+        (click)="toggleShowForm()"
+        [attr.aria-expanded]="showForm()"
+        aria-controls="rec-create-form">
+        {{ showForm() ? '✕ Cancel' : '+ Add Recommendation' }}
+      </button>
+    }
+  </header>
+
+  <!-- Loading -->
+  @if (loading) {
+    <ss-loading-spinner label="Loading recommendations…" size="sm"></ss-loading-spinner>
+  }
+
+  <!-- Section error -->
+  @if (!loading && error) {
+    <ss-error-banner [message]="error" [dismissible]="false"></ss-error-banner>
+    <div class="retry-row">
+      <button class="btn btn--ghost btn--sm" (click)="retry.emit()">Retry</button>
+    </div>
+  }
+
+  <!-- Create form -->
+  @if (!loading && !error && showForm()) {
+    <div class="intel-form card" id="rec-create-form" aria-label="Add recommendation">
+      <h3 class="intel-form__title">Add Recommendation</h3>
+
+      @if (formError()) {
+        <ss-error-banner [message]="formError()" [dismissible]="true" (dismissed)="formError.set(null)"></ss-error-banner>
+      }
+
+      <form [formGroup]="createForm" (ngSubmit)="onCreateSubmit()" novalidate>
+        <div class="form-group">
+          <label for="rec-title">Title <span class="req" aria-hidden="true">*</span></label>
+          <input
+            id="rec-title"
+            type="text"
+            class="form-control"
+            [class.is-invalid]="!!fieldError('title')"
+            formControlName="title"
+            placeholder="e.g. Expand storage capacity"
+            aria-required="true" />
+          @if (fieldError('title')) {
+            <span class="form-error" role="alert">{{ fieldError('title') }}</span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="rec-priority">Priority <span class="req" aria-hidden="true">*</span></label>
+          <select id="rec-priority" class="form-control" formControlName="priority" aria-required="true">
+            @for (p of priorities; track p) {
+              <option [value]="p">{{ p }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="rec-description">Description <span class="req" aria-hidden="true">*</span></label>
+          <textarea
+            id="rec-description"
+            class="form-control"
+            [class.is-invalid]="!!fieldError('description')"
+            formControlName="description"
+            rows="3"
+            placeholder="Describe the recommended action…"
+            aria-required="true">
+          </textarea>
+          @if (fieldError('description')) {
+            <span class="form-error" role="alert">{{ fieldError('description') }}</span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="rec-reason">Reason <span class="field-optional">(optional)</span></label>
+          <textarea
+            id="rec-reason"
+            class="form-control"
+            formControlName="reason"
+            rows="2"
+            placeholder="Why this action is recommended…">
+          </textarea>
+        </div>
+
+        <div class="form-actions">
+          <button
+            type="submit"
+            class="btn btn--primary"
+            [disabled]="createForm.invalid || saving()"
+            [attr.aria-busy]="saving()">
+            {{ saving() ? 'Saving…' : 'Save Recommendation' }}
+          </button>
+          <button type="button" class="btn btn--ghost" (click)="showForm.set(false)">Cancel</button>
+        </div>
+      </form>
+    </div>
+  }
+
+  <!-- Empty state -->
+  @if (!loading && !error && displayItems().length === 0 && !showForm()) {
+    <div class="card" style="padding:0">
+      <ss-empty-state icon="💡" message="No recommendations" subMessage="Add a recommendation to guide the investigation."></ss-empty-state>
+    </div>
+  }
+
+  <!-- Recommendation list -->
+  @if (!loading && !error && displayItems().length > 0) {
+    <div class="intel-list">
+      @for (rec of displayItems(); track rec.id) {
+        <div class="intel-card card">
+          <div class="intel-card__header">
+            <span class="intel-card__title">{{ rec.title }}</span>
+            <ss-severity-badge [severity]="rec.priority"></ss-severity-badge>
+          </div>
+          <p class="intel-card__body">{{ rec.description }}</p>
+          @if (rec.reason) {
+            <p class="intel-card__reason">{{ rec.reason }}</p>
+          }
+          <div class="intel-card__meta">
+            <span class="time-muted">{{ rec.created_at | relativeTime }}</span>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</section>

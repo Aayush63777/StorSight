@@ -1,0 +1,81 @@
+<section class="intel-section" aria-labelledby="risk-title">
+  <header class="section-header">
+    <h2 class="section-title" id="risk-title">Risk Score</h2>
+  </header>
+
+  @if (loading) {
+    <ss-loading-spinner label="Loading risk score…" size="sm"></ss-loading-spinner>
+  }
+
+  @if (!loading && error) {
+    <ss-error-banner
+      [message]="error"
+      [dismissible]="false">
+    </ss-error-banner>
+    <div class="retry-row">
+      <button class="btn btn--ghost btn--sm" (click)="retry.emit()" aria-label="Retry loading risk score">
+        Retry
+      </button>
+    </div>
+  }
+
+  @if (!loading && !error && data; as r) {
+    <div class="risk-card card">
+      <!-- Score + classification -->
+      <div class="risk-score-row">
+        <div class="risk-score-display" [attr.aria-label]="'Risk score ' + r.score + ' out of 100'">
+          <span class="risk-score-display__number risk-score-display__number--{{ scoreBand(r.score) }}">
+            {{ r.score }}
+          </span>
+          <span class="risk-score-display__denom">/100</span>
+        </div>
+        <div class="risk-score-right">
+          <ss-severity-badge [severity]="r.classification"></ss-severity-badge>
+          <div
+            class="risk-bar"
+            role="progressbar"
+            [attr.aria-valuenow]="r.score"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            [attr.aria-label]="r.score + '% risk'">
+            <div
+              class="risk-bar__fill risk-bar__fill--{{ scoreBand(r.score) }}"
+              [style.width]="scoreBarWidth(r.score)">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Factors breakdown -->
+      <div class="risk-factors">
+        <h3 class="risk-factors__title">Score Breakdown</h3>
+        <dl class="factors-grid">
+          <div class="factor">
+            <dt>Incident severity</dt>
+            <dd><ss-severity-badge [severity]="r.factors.incident_severity"></ss-severity-badge></dd>
+          </div>
+          <div class="factor">
+            <dt>Base score</dt>
+            <dd class="mono-val">{{ r.factors.base_score }}</dd>
+          </div>
+          <div class="factor">
+            <dt>Event contribution</dt>
+            <dd class="mono-val">+{{ r.factors.event_contribution }}</dd>
+          </div>
+          <div class="factor">
+            <dt>Alert contribution</dt>
+            <dd class="mono-val">+{{ r.factors.alert_contribution }}</dd>
+          </div>
+          <div class="factor factor--subtle">
+            <dt>Correlated events</dt>
+            <dd>{{ r.factors.correlated_event_count }}</dd>
+          </div>
+          <div class="factor factor--subtle">
+            <dt>Active alerts</dt>
+            <dd>{{ r.factors.active_alert_count }}</dd>
+          </div>
+        </dl>
+      </div>
+    </div>
+  }
+</section>

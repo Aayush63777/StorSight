@@ -2,464 +2,336 @@
 
 ## Storage Incident Root-Cause & Operations Intelligence Platform
 
-StorSight is an independent portfolio project designed to demonstrate how a modern web-based platform can help IT operations teams monitor storage resources, manage operational incidents, correlate events, and generate explainable root-cause insights.
+StorSight is a full-stack portfolio project that demonstrates how a modern web platform connects infrastructure signals — metrics, events, alerts, and incidents — into a unified operational intelligence workflow. Engineers can investigate incidents, correlate events, analyze root causes, assess risk, generate recommendations, record engineer actions, and maintain a complete audit trail.
 
-The project is inspired by real-world enterprise storage operations and is designed as a learning and portfolio project using Python, Flask, SQL, HTML, CSS, and JavaScript.
-
-> **Disclaimer:** StorSight is an independent portfolio project. It is not an internal, proprietary, or official NetApp product.
+> **Disclaimer:** StorSight is an independent portfolio and learning project. It is inspired by concepts commonly encountered in enterprise storage operations, infrastructure monitoring, incident management, and troubleshooting. It is not an internal, proprietary, official, or affiliated NetApp product and does not contain proprietary NetApp source code, confidential information, or internal systems. The project is intended to demonstrate software engineering, system design, backend development, database design, operational intelligence concepts, testing, and deployment skills.
 
 ---
 
-## 1. Project Overview
+## Technology Stack
 
-Modern IT environments generate large amounts of infrastructure metrics, events, alerts, and operational incidents. Identifying the relationship between these signals and determining the likely root cause can be difficult when information is distributed across different systems.
+### Backend
+| Technology | Version | Role |
+|-----------|---------|------|
+| Python | 3.x | Application language |
+| Flask | 3.1.3 | Web framework / REST API |
+| Flask-SQLAlchemy | 3.1.1 | ORM |
+| Flask-Migrate | 4.1.0 | Database migrations (Alembic) |
+| Flask-CORS | 6.0.5 | Cross-origin resource sharing |
+| SQLAlchemy | 2.0.52 | Database abstraction |
+| psycopg | 3.3.4 | PostgreSQL adapter |
+| python-dotenv | 1.2.3 | Environment configuration |
+| Werkzeug | 3.1.8 | Password hashing, WSGI utilities |
+| pytest | 8.4.2 | Backend test runner |
 
-StorSight aims to provide a centralized operational workspace where storage resources, infrastructure events, alerts, and incidents can be managed and analyzed through a unified interface.
+**Database:** SQLite for local development — PostgreSQL-ready for production (psycopg included).
 
-The platform will focus on:
-
-- Storage resource management
-- Infrastructure monitoring concepts
-- Event and alert management
-- Incident management
-- Event correlation
-- Explainable root-cause analysis
-- Risk scoring
-- Operational recommendations
-- Audit logging
-- Responsive dashboards
+### Frontend
+| Technology | Version | Role |
+|-----------|---------|------|
+| Angular | 19.2 | SPA framework |
+| TypeScript | 5.7 | Application language |
+| RxJS | 7.8 | Reactive programming |
+| Karma + Jasmine | 6.4 / 5.6 | Frontend test runner |
 
 ---
 
-## 2. Problem Statement
-
-IT operations teams may receive multiple alerts from the same underlying infrastructure problem.
-
-For example:
-
-```text
-Storage latency increases
-        ↓
-Application response time increases
-        ↓
-Multiple alerts are generated
-        ↓
-An incident is created
-        ↓
-Engineer investigates multiple signals
-
-
-3. Objectives
-
-The primary objectives of StorSight are to:
-
-Provide a centralized storage operations dashboard.
-Manage storage infrastructure resources.
-Record infrastructure events and alerts.
-Create and manage operational incidents.
-Correlate related events with incidents.
-Apply explainable rule-based root-cause analysis.
-Calculate operational risk scores.
-Provide troubleshooting recommendations.
-Maintain an audit trail of important actions.
-Provide a responsive web interface.
-Demonstrate production-oriented Flask development practices.
-4. Planned MVP Capabilities
-
-The initial MVP is planned to include:
-
-User authentication
-Role-based access control
-Storage resource management
-Storage health overview
-Event management
-Alert management
-Incident management
-Incident timeline
-Event-to-incident correlation
-Rule-based root-cause analysis
-Risk scoring
-Recommendation engine
-Operational dashboard
-Audit logging
-Responsive UI
-REST API endpoints
-Automated tests
-
-Features listed above are planned capabilities unless explicitly marked as completed in the project status section.
-
-5. Target Users
-
-The initial platform is designed around the following roles:
-
-Operations Engineer
-
-Responsible for monitoring infrastructure, investigating alerts, and resolving incidents.
-
-System Administrator
-
-Responsible for managing infrastructure resources and operational configuration.
-
-Operations Manager
-
-Responsible for monitoring operational health, incident trends, and overall risk.
-
-Platform Administrator
-
-Responsible for users, roles, configuration, and audit information.
-
-6. Core Workflow
-
-The planned operational workflow is:
-
-Infrastructure
-      ↓
-Metrics / Events
-      ↓
-Alerts
-      ↓
-Incident
-      ↓
-Event Correlation
-      ↓
-Root Cause Analysis
-      ↓
-Risk Score
-      ↓
-Recommendation
-      ↓
-Engineer Action
-      ↓
-Resolution
-      ↓
-Audit Trail
-
-The objective is to provide a clear relationship between infrastructure signals and operational incidents.
-
-7. Technology Stack
-Backend
-Python
-Flask
-Database
-SQL-based relational database
-SQLite for local development where appropriate
-PostgreSQL planned for production deployment
-Frontend
-HTML5
-CSS3
-JavaScript
-Development
-VS Code
-Git
-GitHub
-Python virtual environment
-Testing
-pytest
-Deployment
-
-The application will be designed to support deployment to a cloud hosting environment.
-
-Containerization may be introduced as the project matures.
-
-8. Planned Architecture
-
-StorSight will initially follow a modular monolith architecture.
-
-The planned architecture is:
-
-Browser
-   ↓
-HTML / CSS / JavaScript
-   ↓
-Flask Routes / REST API
-   ↓
-Application Services
-   ↓
-Business Rules
-   ↓
-Data Access Layer
-   ↓
-SQL Database
-
-Supporting components will include:
-
-Authentication
-Authorization
-Validation
-Logging
-Audit Trail
-Error Handling
-Testing
-Configuration Management
-
-The architecture will remain intentionally simpler than a microservices architecture so that the MVP can be developed, tested, deployed, and understood efficiently.
-
-9. Root-Cause Intelligence Approach
-
-The initial root-cause intelligence engine will use explainable rule-based analysis rather than external AI or machine-learning services.
-
-For example:
-
-High latency
-+
-Storage capacity threshold exceeded
-+
-Recent storage event
-        ↓
-Potential capacity-related incident
-        ↓
-Risk Score
-        ↓
-Recommended Investigation
-
-Each result should provide an explanation of why the rule was triggered.
-
-This approach is intentionally chosen for the MVP because it is:
-
-Explainable
-Deterministic
-Testable
-Easy to debug
-Easy to demonstrate in an interview
-
-Machine-learning or external AI capabilities may be considered as future enhancements.
-
-10. Security Approach
-
-Security will be considered from the beginning of development.
-
-Planned practices include:
-
-Password hashing
-Authentication
-Role-based authorization
-Environment-based secrets
-CSRF protection where applicable
-Input validation
-Secure session configuration
-SQL injection prevention through parameterized/database abstraction mechanisms
-Error handling without exposing sensitive information
-Audit logging
-No secrets committed to Git
-
-Actual security features will be implemented progressively during development.
-
-11. Responsive UI Strategy
-
-The interface will be designed for:
-
-Mobile
-   ↓
-Tablet
-   ↓
-Desktop
-
-Responsive design will be considered from the beginning rather than added after desktop development.
-
-Planned UI principles include:
-
-Responsive navigation
-Mobile-friendly tables
-Responsive dashboards
-Accessible forms
-Consistent spacing
-Reusable UI components
-Clear status indicators
-Operationally focused layouts
-12. Testing Strategy
-
-The project will gradually introduce automated testing.
-
-Planned testing areas include:
-
-Unit Tests
-
-Business rules and utility functions.
-
-Integration Tests
-
-Flask routes and database interactions.
-
-Authentication Tests
-
-Login, authorization, and access control.
-
-API Tests
-
-REST endpoint behavior and validation.
-
-Regression Tests
-
-Protection against previously fixed issues.
-
-The goal is to ensure that important business logic can be tested independently from the user interface.
-
-13. Deployment Strategy
-
-The application will be designed for deployment from the beginning.
-
-The planned deployment workflow is:
-
-Local Development
-       ↓
-Git
-       ↓
-GitHub
-       ↓
-Automated Validation
-       ↓
-Production Deployment
-
-Environment-specific configuration will be handled using environment variables.
-
-Production secrets will never be committed to the Git repository.
-
-PostgreSQL will be considered for production database deployment.
-
-Containerization may be added later if it provides meaningful value.
-
-14. Git / GitHub Development Workflow
-
-Development will follow a controlled Git workflow.
-
-Feature Planning
-      ↓
-Implementation
-      ↓
-Testing
-      ↓
-Git Status
-      ↓
-Commit
-      ↓
-GitHub
-
-Commit messages should clearly describe the change.
-
-Examples:
-
-feat: add incident management
-fix: validate incident severity
-test: add incident service tests
-docs: update deployment guide
-chore: update dependencies
-
-The GitHub repository will act as the primary source-control system for the project.
-
-15. Local Development Overview
-
-The project is intended to be developed in VS Code.
-
-Typical setup:
-
+## Features
+
+### Authentication & Security
+- Session-based authentication with secure Flask session cookies
+- Password hashing via Werkzeug
+- Role-based authorization (ENGINEER, ADMIN, etc.)
+- Auth guard protecting all routes — redirects unauthenticated users to `/login`
+- HTTP interceptor attaching credentials to every API request and handling 401 session expiry
+
+### Storage Resource Management
+- Create, view, update, and delete storage resources
+- Resource types (SAN, NAS, etc.) with health and capacity tracking
+- Filter resources by status and type
+
+### Metrics
+- Record and browse infrastructure performance metrics per resource
+- Filter by resource or metric name
+
+### Events
+- Record infrastructure events with severity classification (info / warning / error / critical)
+- Filter by resource, severity, or event type
+- Link events to storage resources
+
+### Alerts
+- Create and manage operational alerts
+- Severity levels: info / warning / critical
+- Status lifecycle: active → resolved
+- Inline resolve from the alerts list
+
+### Incident Management
+- Create incidents with severity (low / medium / high / critical) and status tracking (open / in\_progress / resolved)
+- Assign incidents to users
+- Resolve incidents with confirmation
+- Correlate related infrastructure events with incidents
+
+### Incident Intelligence (per-incident detail page)
+- **Risk Score** — deterministic score (0–100) with classification and contributing factors
+- **Root Cause Analysis** — rule-based engine produces categorized explanations with confidence scores
+- **Recommendations** — generated recommendations with priority and reason, create new recommendations inline
+- **Engineer Actions** — record investigation, diagnosis, remediation, escalation, monitoring, and note actions with optional recommendation links
+- **Audit Trail** — full per-incident audit history with action formatting
+
+### Global Audit Logs
+- Paginated, filterable view of all audit activity across the platform
+- Filter by entity type and action keyword
+- Client-side pagination (20 entries per page)
+
+### Dashboard
+- Operational overview: resource health distribution, open incident count, active alert count, critical incident count
+- Alert severity breakdown, incident severity breakdown
+- Recent events, recent incidents, recent audit activity
+- Health percentage indicator
+
+---
+
+## Architecture
+
+```
+Browser (Angular 19 SPA)
+         ↓ HTTP (session cookie, JSON)
+Flask REST API  ←→  Flask-SQLAlchemy ORM
+         ↓
+SQLite (dev) / PostgreSQL (production)
+```
+
+### Backend layers
+```
+app/routes/      ← Flask blueprints, HTTP request/response
+app/services/    ← Application logic, validation, business rules
+app/models/      ← SQLAlchemy ORM models
+app/repositories/ ← Data access layer
+app/auth/        ← Authentication decorators
+```
+
+### Frontend layers
+```
+features/        ← Page components (one directory per feature)
+core/services/   ← HTTP service layer (one service per API resource)
+core/auth/       ← AuthService, AuthGuard, AuthInterceptor
+shared/          ← Reusable components and pipes
+```
+
+---
+
+## Project Structure
+
+```
+storsight/
+├── app/
+│   ├── auth/               # Auth decorators
+│   ├── models/             # SQLAlchemy models
+│   ├── repositories/       # Data access layer
+│   ├── routes/             # Flask blueprints (REST endpoints)
+│   └── services/           # Application services + business rules
+├── migrations/             # Alembic database migrations
+├── tests/                  # pytest backend tests (279 tests)
+├── instance/               # SQLite database files (gitignored)
+├── .env.example            # Environment variable template
+├── requirements.txt        # Python dependencies
+└── storsight-frontend/
+    └── src/app/
+        ├── core/
+        │   ├── auth/       # AuthService, AuthGuard, AuthInterceptor
+        │   ├── models/     # TypeScript interfaces
+        │   └── services/   # HTTP services
+        ├── features/       # Page components
+        │   ├── auth/       # Login
+        │   ├── dashboard/
+        │   ├── storage-resources/
+        │   ├── metrics/
+        │   ├── events/
+        │   ├── alerts/
+        │   ├── incidents/  # List + detail with intelligence sections
+        │   └── audit-logs/
+        ├── layout/         # App shell, sidebar, topbar
+        └── shared/         # Reusable components and pipes
+```
+
+---
+
+## Local Development
+
+### Prerequisites
+
+- Python 3.x
+- Node.js 18+
+- npm 9+
+
+### Backend setup
+
+```bash
+# Clone the repository
 git clone <repository-url>
-
 cd storsight
 
+# Create and activate virtual environment
 python -m venv .venv
 
-# Windows Git Bash
-source .venv/Scripts/activate
+# Windows PowerShell
+.venv\Scripts\Activate.ps1
 
+# macOS / Linux
+source .venv/bin/activate
+
+# Install dependencies
 pip install -r requirements.txt
 
-Environment configuration will be based on .env.example.
+# Copy environment configuration
+cp .env.example .env
 
-The exact application startup command will be documented after the Flask application is implemented.
+# Apply database migrations
+flask db upgrade
 
-16. Project Status
-Completed
-Initial project repository created
-Git repository initialized
-GitHub remote configured
-Initial project foundation files created
-In Development
-Project architecture
-Database design
-Flask application structure
-Authentication
-Core operational modules
-Planned
-Incident intelligence
-Root-cause analysis
-Risk scoring
-Dashboard
-REST APIs
-Automated testing
-Production deployment
-17. Roadmap
-Phase 0 — Repository Foundation
-Repository setup
-Documentation foundation
-Environment configuration
-Git workflow
-Phase 1 — Technical Architecture
-Application architecture
-Database schema
-Security model
-API conventions
-Phase 2 — Flask Foundation
-Application factory
-Configuration
-Extensions
-Error handling
-Logging
-Phase 3 — Authentication
-User model
-Login
-Password security
-Roles
-Authorization
-Phase 4 — Infrastructure Management
-Storage resources
-Health information
-Resource dashboard
-Phase 5 — Events and Alerts
-Event management
-Alert management
-Event classification
-Phase 6 — Incident Management
-Incident lifecycle
-Incident timeline
-Event correlation
-Phase 7 — Root-Cause Intelligence
-Rule engine
-Risk scoring
-Recommendations
-Phase 8 — Dashboard
-Operational overview
-Incident analytics
-Health indicators
-Phase 9 — Testing & Security
-Unit tests
-Integration tests
-Security hardening
-Validation
-Phase 10 — Deployment
-Production configuration
-Database deployment
-Cloud deployment
-Documentation
-18. Future Enhancements
+# Start the Flask development server
+flask run
+```
 
-Potential future capabilities include:
+The API runs at `http://localhost:5000`.
 
-Advanced anomaly detection
-Machine-learning-based analysis
-External AI-assisted investigation
-Real storage platform integrations
-Automated remediation workflows
-Notification integrations
-Historical trend analysis
-Predictive capacity analysis
-Advanced observability integrations
-Containerized deployment
-Background job processing
-Advanced reporting
+### Environment variables (`.env`)
 
-These capabilities are intentionally outside the initial MVP scope.
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `FRONTEND_ORIGIN` | `http://localhost:4200` | Angular dev server origin for CORS |
+| `LOG_LEVEL` | `INFO` | Application log level |
+| `SESSION_COOKIE_SECURE` | `false` | Set `true` in production (HTTPS only) |
+| `SESSION_COOKIE_HTTPONLY` | `true` | Prevent JS access to session cookie |
+| `SESSION_COOKIE_SAMESITE` | `Lax` | CSRF protection mode |
 
-19. Disclaimer
+### Frontend setup
+
+```bash
+cd storsight-frontend
+
+# Install dependencies
+npm install
+
+# Start the Angular development server
+npm start
+```
+
+The frontend runs at `http://localhost:4200`.
+
+---
+
+## Running Tests
+
+### Backend tests
+
+```bash
+# From the storsight/ root with virtual environment active
+pytest tests/ -q
+```
+
+Expected: **279 passed**
+
+### Frontend tests
+
+```bash
+cd storsight-frontend
+
+# Single-run (CI mode)
+ng test --watch=false --browsers=ChromeHeadless
+
+# Or via npm
+npm test -- --watch=false --browsers=ChromeHeadless
+```
+
+Expected: **552 passed**
+
+### Frontend build
+
+```bash
+cd storsight-frontend
+npm run build
+```
+
+Expected: **0 errors, 0 warnings**
+
+---
+
+## API Overview
+
+All endpoints require authentication (`@login_required`) except `/api/auth/login`.
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/auth/login` | Authenticate and create session |
+| `POST` | `/api/auth/logout` | End session |
+| `GET` | `/api/auth/me` | Get current authenticated user |
+| `GET` | `/api/health` | Health check |
+| `GET/POST` | `/api/storage-resources/` | List / create storage resources |
+| `GET/PATCH/DELETE` | `/api/storage-resources/:id` | Get / update / delete resource |
+| `GET/POST` | `/api/metrics/` | List / create metrics |
+| `GET` | `/api/metrics/:id` | Get metric |
+| `GET/POST` | `/api/events/` | List / create events |
+| `GET` | `/api/events/:id` | Get event |
+| `GET/POST` | `/api/alerts/` | List / create alerts |
+| `GET` | `/api/alerts/:id` | Get alert |
+| `PATCH` | `/api/alerts/:id/resolve` | Resolve alert |
+| `GET/POST` | `/api/incidents/` | List / create incidents |
+| `GET` | `/api/incidents/:id` | Get incident |
+| `PATCH` | `/api/incidents/:id/resolve` | Resolve incident |
+| `PATCH` | `/api/incidents/:id/assign` | Assign incident |
+| `GET/POST` | `/api/incidents/:id/events` | List / link correlated events |
+| `GET/POST` | `/api/incidents/:id/rca` | List / create root cause analyses |
+| `GET` | `/api/incidents/:id/risk` | Get risk score |
+| `GET/POST` | `/api/incidents/:id/recommendations` | List / create recommendations |
+| `GET/POST` | `/api/incidents/:id/actions` | List / create engineer actions |
+| `GET` | `/api/audit-logs/` | List all audit log entries |
+| `GET` | `/api/audit-logs/incidents/:id` | List audit logs for an incident |
+| `GET/POST` | `/api/roles/` | List / create roles |
+| `GET/POST` | `/api/users/` | List / create users |
+
+---
+
+## Test Coverage
+
+### Backend — 279 tests
+
+| Test file | Coverage area |
+|-----------|--------------|
+| `test_auth.py` | Login, logout, session, authorization |
+| `test_storage_resources.py` | CRUD, validation, health |
+| `test_metrics.py` | Record and retrieve metrics |
+| `test_events.py` | Event lifecycle, filtering |
+| `test_alerts.py` | Alert management, resolve workflow |
+| `test_incidents.py` | Incident lifecycle, assign, resolve |
+| `test_incident_events.py` | Event correlation |
+| `test_rca.py` | Root cause analysis rules |
+| `test_risk.py` | Risk scoring logic |
+| `test_recommendations.py` | Recommendation generation |
+| `test_actions.py` | Engineer action recording |
+| `test_audit.py` | Audit log recording |
+| `test_cors.py` | CORS configuration |
+| `test_health.py` | Health endpoint |
+| `test_database.py` | Database connectivity |
+
+### Frontend — 552 tests
+
+| Area | Files with specs |
+|------|-----------------|
+| Auth layer | `auth.service`, `auth.guard`, `auth.interceptor`, `login.component` |
+| Core services | `alert`, `audit-log`, `event`, `incident`, `metric`, `storage-resource` |
+| Shared pipes | `relative-time`, `severity-color` |
+| Dashboard | `dashboard.component` |
+| Storage resources | `list`, `detail`, `form` |
+| Metrics | `list`, `detail` |
+| Events | `list`, `detail` |
+| Alerts | `list`, `detail` |
+| Incidents | `list`, `detail`, `risk-score-section`, `rca-section`, `recommendations-section`, `engineer-actions-section`, `audit-trail-section` |
+| Audit logs | `audit-logs.component` |
+
+---
+
+## Disclaimer
 
 StorSight is an independent portfolio and learning project.
 

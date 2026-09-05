@@ -1,0 +1,145 @@
+<section class="intel-section" aria-labelledby="rca-title">
+  <header class="section-header">
+    <h2 class="section-title" id="rca-title">Root Cause Analysis</h2>
+    <span class="section-count">{{ displayItems().length }}</span>
+    @if (!loading && !error) {
+        <button
+        class="btn btn--ghost btn--sm"
+        (click)="toggleShowForm()"
+        [attr.aria-expanded]="showForm()"
+        aria-controls="rca-create-form">
+        {{ showForm() ? '✕ Cancel' : '+ Add RCA' }}
+      </button>
+    }
+  </header>
+
+  <!-- Loading -->
+  @if (loading) {
+    <ss-loading-spinner label="Loading RCA…" size="sm"></ss-loading-spinner>
+  }
+
+  <!-- Section error -->
+  @if (!loading && error) {
+    <ss-error-banner [message]="error" [dismissible]="false"></ss-error-banner>
+    <div class="retry-row">
+      <button class="btn btn--ghost btn--sm" (click)="retry.emit()">Retry</button>
+    </div>
+  }
+
+  <!-- Create form -->
+  @if (!loading && !error && showForm()) {
+    <div class="intel-form card" id="rca-create-form" aria-label="Add root cause analysis">
+      <h3 class="intel-form__title">Add Root Cause Analysis</h3>
+
+      @if (formError()) {
+        <ss-error-banner [message]="formError()" [dismissible]="true" (dismissed)="formError.set(null)"></ss-error-banner>
+      }
+
+      <form [formGroup]="createForm" (ngSubmit)="onCreateSubmit()" novalidate>
+        <div class="form-group">
+          <label for="rca-category">Category <span class="req" aria-hidden="true">*</span></label>
+          <input
+            id="rca-category"
+            type="text"
+            class="form-control"
+            [class.is-invalid]="!!fieldError('root_cause_category')"
+            formControlName="root_cause_category"
+            placeholder="e.g. capacity_exhaustion"
+            aria-required="true" />
+          @if (fieldError('root_cause_category')) {
+            <span class="form-error" role="alert">{{ fieldError('root_cause_category') }}</span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="rca-rule">Rule name <span class="req" aria-hidden="true">*</span></label>
+          <input
+            id="rca-rule"
+            type="text"
+            class="form-control"
+            [class.is-invalid]="!!fieldError('rule_name')"
+            formControlName="rule_name"
+            placeholder="e.g. capacity_threshold_rule"
+            aria-required="true" />
+          @if (fieldError('rule_name')) {
+            <span class="form-error" role="alert">{{ fieldError('rule_name') }}</span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="rca-confidence">
+            Confidence score
+            <span class="field-hint">(0.0 – 1.0)</span>
+          </label>
+          <input
+            id="rca-confidence"
+            type="number"
+            class="form-control"
+            [class.is-invalid]="!!fieldError('confidence_score')"
+            formControlName="confidence_score"
+            min="0"
+            max="1"
+            step="0.01" />
+          @if (fieldError('confidence_score')) {
+            <span class="form-error" role="alert">{{ fieldError('confidence_score') }}</span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="rca-explanation">Explanation <span class="req" aria-hidden="true">*</span></label>
+          <textarea
+            id="rca-explanation"
+            class="form-control"
+            [class.is-invalid]="!!fieldError('explanation')"
+            formControlName="explanation"
+            rows="3"
+            placeholder="Describe the root cause…"
+            aria-required="true">
+          </textarea>
+          @if (fieldError('explanation')) {
+            <span class="form-error" role="alert">{{ fieldError('explanation') }}</span>
+          }
+        </div>
+
+        <div class="form-actions">
+          <button
+            type="submit"
+            class="btn btn--primary"
+            [disabled]="createForm.invalid || saving()"
+            [attr.aria-busy]="saving()">
+            {{ saving() ? 'Saving…' : 'Save RCA' }}
+          </button>
+          <button type="button" class="btn btn--ghost" (click)="showForm.set(false)">Cancel</button>
+        </div>
+      </form>
+    </div>
+  }
+
+  <!-- Empty state -->
+  @if (!loading && !error && displayItems().length === 0 && !showForm()) {
+    <div class="card" style="padding:0">
+      <ss-empty-state icon="🔍" message="No root cause analyses" subMessage="Add an RCA to document the identified root cause."></ss-empty-state>
+    </div>
+  }
+
+  <!-- RCA list -->
+  @if (!loading && !error && displayItems().length > 0) {
+    <div class="intel-list">
+      @for (rca of displayItems(); track rca.id) {
+        <div class="intel-card card">
+          <div class="intel-card__header">
+            <span class="intel-card__category">{{ rca.root_cause_category }}</span>
+            <span class="confidence-badge confidence-badge--{{ rca.confidence_score >= 0.8 ? 'high' : rca.confidence_score >= 0.5 ? 'medium' : 'low' }}">
+              {{ confidencePercent(rca.confidence_score) }} confidence
+            </span>
+          </div>
+          <p class="intel-card__explanation">{{ rca.explanation }}</p>
+          <div class="intel-card__meta">
+            <span class="mono-sm">{{ rca.rule_name }}</span>
+            <span class="time-muted">{{ rca.created_at | relativeTime }}</span>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</section>
