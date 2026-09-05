@@ -337,6 +337,4 @@ StorSight is an independent portfolio and learning project.
 
 It is inspired by concepts commonly encountered in enterprise storage operations, infrastructure monitoring, incident management, and troubleshooting.
 
-It is not an internal, proprietary, official, or affiliated NetApp product and does not contain proprietary NetApp source code, confidential information, or internal systems.
-
 The project is intended to demonstrate software engineering, system design, backend development, database design, operational intelligence concepts, testing, and deployment skills.
