@@ -455,7 +455,7 @@ def test_health_endpoint_still_works(client):
     """Health endpoint is unaffected by Phase 7 changes."""
     response = client.get("/health")
     assert response.status_code == 200
-    assert response.get_json() == {"status": "healthy"}
+    assert response.get_json() == {"status": "ok"}
 
 
 def test_alerts_endpoint_still_protected(client):

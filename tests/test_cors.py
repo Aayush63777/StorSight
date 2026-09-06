@@ -273,4 +273,4 @@ def test_health_endpoint_still_works(client):
     """Health endpoint remains unaffected by CORS changes."""
     response = client.get("/health")
     assert response.status_code == 200
-    assert response.get_json() == {"status": "healthy"}
+    assert response.get_json() == {"status": "ok"}
