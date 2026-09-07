@@ -1,11 +1,13 @@
 """Tests for StorSight authentication and authorization foundation."""
 
 import pytest
+from urllib.parse import parse_qs, urlparse
 
 from app.auth.decorators import role_required
 from app.extensions import db
 from app.models.role import Role
 from app.models.user import User
+from app.models.password_reset_token import PasswordResetToken
 from app.services.auth_service import AuthService
 
 
@@ -237,3 +239,148 @@ def test_role_authorization_rejects_non_matching_role(client, auth_data):
 
         assert response[1] == 403
         assert response[0].json == {"error": "Forbidden"}
+
+
+def test_admin_can_provision_user(client, app, auth_data):
+    """Verify only an administrator can create a user account."""
+    with app.app_context():
+        admin_role = Role(name="ADMIN", description="Platform administrator")
+        db.session.add(admin_role)
+        db.session.flush()
+
+        admin = User(
+            username="admin-user",
+            email="admin@storsight.local",
+            password_hash=AuthService().hash_password("Admin-Test-Password"),
+            role_id=admin_role.id,
+        )
+        db.session.add(admin)
+        db.session.commit()
+        engineer_role_id = Role.query.filter_by(name="ENGINEER").first().id
+
+    client.post(
+        "/api/auth/login",
+        json={
+            "username": "admin-user",
+            "password": "Admin-Test-Password",
+        },
+    )
+
+    response = client.post(
+        "/api/users/",
+        json={
+            "username": "new-engineer",
+            "email": "new-engineer@storsight.local",
+            "password": "Secure-Test-Password",
+            "role_id": engineer_role_id,
+        },
+    )
+
+    assert response.status_code == 201
+    assert response.get_json()["username"] == "new-engineer"
+    assert "password_hash" not in response.get_json()
+
+    with app.app_context():
+        user = User.query.filter_by(username="new-engineer").first()
+        assert user is not None
+        assert AuthService().verify_password(
+            user.password_hash,
+            "Secure-Test-Password",
+        )
+
+
+def test_engineer_cannot_manage_users(client, auth_data):
+    """Verify ordinary authenticated users cannot provision accounts."""
+    client.post(
+        "/api/auth/login",
+        json={
+            "username": auth_data["username"],
+            "password": auth_data["password"],
+        },
+    )
+
+    response = client.post(
+        "/api/users/",
+        json={
+            "username": "blocked-user",
+            "email": "blocked@storsight.local",
+            "password": "Secure-Test-Password",
+            "role_id": 1,
+        },
+    )
+
+    assert response.status_code == 403
+
+
+def test_forgot_password_does_not_reveal_account_existence(
+    client,
+    auth_data,
+    monkeypatch,
+):
+    """Verify known and unknown emails receive the same safe response."""
+    sent_urls = []
+
+    monkeypatch.setattr(
+        "app.routes.auth.mail_service.send_password_reset",
+        lambda recipient, reset_url: sent_urls.append((recipient, reset_url)),
+    )
+
+    known = client.post(
+        "/api/auth/forgot-password",
+        json={"email": "testuser@storsight.local"},
+    )
+    unknown = client.post(
+        "/api/auth/forgot-password",
+        json={"email": "unknown@storsight.local"},
+    )
+
+    assert known.status_code == 202
+    assert unknown.status_code == 202
+    assert known.get_json() == unknown.get_json()
+    assert len(sent_urls) == 1
+    assert sent_urls[0][0] == "testuser@storsight.local"
+
+
+def test_reset_password_is_single_use_and_revokes_session(
+    client,
+    app,
+    auth_data,
+    monkeypatch,
+):
+    """Verify reset consumes its token and invalidates an existing session."""
+    sent_urls = []
+    monkeypatch.setattr(
+        "app.routes.auth.mail_service.send_password_reset",
+        lambda recipient, reset_url: sent_urls.append(reset_url),
+    )
+
+    client.post(
+        "/api/auth/login",
+        json={
+            "username": auth_data["username"],
+            "password": auth_data["password"],
+        },
+    )
+    response = client.post(
+        "/api/auth/forgot-password",
+        json={"email": "testuser@storsight.local"},
+    )
+    assert response.status_code == 202
+
+    token = parse_qs(urlparse(sent_urls[0]).query)["token"][0]
+    reset = client.post(
+        "/api/auth/reset-password",
+        json={"token": token, "password": "New-Strong-Test-Password"},
+    )
+    assert reset.status_code == 200
+    assert client.get("/api/auth/me").status_code == 401
+
+    reused = client.post(
+        "/api/auth/reset-password",
+        json={"token": token, "password": "Another-Strong-Password"},
+    )
+    assert reused.status_code == 400
+
+    with app.app_context():
+        reset_token = PasswordResetToken.query.first()
+        assert reset_token.used_at is not None

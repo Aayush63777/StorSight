@@ -129,6 +129,13 @@ export const routes: Routes = [
             (m) => m.AuditLogsComponent,
           ),
       },
+      {
+        path: 'users',
+        loadComponent: () =>
+          import('./features/users/users.component').then(
+            (m) => m.UsersComponent,
+          ),
+      },
     ],
   },
 

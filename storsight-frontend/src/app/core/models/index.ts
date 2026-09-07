@@ -13,6 +13,14 @@ export interface User {
   role: string | null; // role name string, e.g. "ENGINEER"
 }
 
+export interface UserRecord {
+  id: number;
+  username: string;
+  email: string;
+  is_active: boolean;
+  role_id: number;
+}
+
 export interface StorageResource {
   id: number;
   name: string;

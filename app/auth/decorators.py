@@ -19,7 +19,12 @@ def login_required(view):
 
         user = UserService().get_by_id(user_id)
 
-        if user is None or not user.is_active:
+        session_version = session.get("session_version", 0)
+        if (
+            user is None
+            or not user.is_active
+            or session_version != user.session_version
+        ):
             session.clear()
             return jsonify({"error": "Authentication required"}), 401
 

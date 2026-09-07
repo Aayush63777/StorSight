@@ -1,11 +1,15 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { inject } from '@angular/core';
+
+import { AuthService } from '../../core/auth/auth.service';
 
 interface NavItem {
   label: string;
   route: string;
   icon: string;
+  adminOnly?: boolean;
 }
 
 @Component({
@@ -24,7 +28,7 @@ interface NavItem {
       [attr.aria-expanded]="!collapsed">
 
       <ul class="sidebar__nav" role="list">
-        @for (item of navItems; track item.route) {
+        @for (item of visibleNavItems; track item.route) {
           <li>
             <a
               class="sidebar__item"
@@ -160,9 +164,17 @@ interface NavItem {
   `],
 })
 export class SidebarComponent {
+  private readonly authService = inject(AuthService);
+
   @Input() open      = false;
   @Input() collapsed = false;
   @Output() closed   = new EventEmitter<void>();
+
+  get visibleNavItems(): NavItem[] {
+    return this.navItems.filter(
+      item => !item.adminOnly || this.authService.currentUser?.role === 'ADMIN',
+    );
+  }
 
   readonly navItems: NavItem[] = [
     {
@@ -199,6 +211,12 @@ export class SidebarComponent {
       label: 'Audit Logs',
       route: '/audit-logs',
       icon: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="1.5" width="12" height="13" rx="1.5" stroke="currentColor" stroke-width="1.4"/><line x1="5" y1="5.5" x2="11" y2="5.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><line x1="5" y1="8" x2="11" y2="8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><line x1="5" y1="10.5" x2="8.5" y2="10.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>`,
+    },
+    {
+      label: 'Users',
+      route: '/users',
+      adminOnly: true,
+      icon: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="2.5" stroke="currentColor" stroke-width="1.4"/><path d="M3 14c.3-2.5 2-4 5-4s4.7 1.5 5 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M12.5 3.5v3M11 5h3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>`,
     },
   ];
 }

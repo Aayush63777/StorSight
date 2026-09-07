@@ -11,6 +11,7 @@ from app.models.role import Role
 from app.models.root_cause_analysis import RootCauseAnalysis
 from app.models.storage_resource import StorageResource
 from app.models.user import User
+from app.models.password_reset_token import PasswordResetToken
 
 __all__ = [
     "Alert",
@@ -24,4 +25,5 @@ __all__ = [
     "RootCauseAnalysis",
     "StorageResource",
     "User",
+    "PasswordResetToken",
 ]
