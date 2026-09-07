@@ -56,6 +56,7 @@ export class AlertListComponent implements OnInit {
   loading          = signal(true);
   resourcesLoading = signal(true);
   error            = signal<string | null>(null);
+  resourceError    = signal<string | null>(null);
   alerts           = signal<Alert[]>([]);
   resources        = signal<StorageResource[]>([]);
 
@@ -86,12 +87,21 @@ export class AlertListComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.resourceSvc.list().pipe(catchError(() => of([]))).subscribe(list => {
+    this.loadResources();
+    this.loadAlerts();
+  }
+
+  loadResources(): void {
+    this.resourcesLoading.set(true);
+    this.resourceError.set(null);
+    this.resourceSvc.list().pipe(catchError(() => {
+      this.resourceError.set('Failed to load storage resources for filtering.');
+      return of([]);
+    })).subscribe(list => {
       this.resources.set(list);
       this.resourcesLoading.set(false);
       this.cdr.markForCheck();
     });
-    this.loadAlerts();
   }
 
   onResourceChange(value: string): void {

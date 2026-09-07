@@ -13,8 +13,10 @@ class AuditLogService:
     def get_by_id(self, audit_log_id: int):
         return self.repository.get_by_id(audit_log_id)
 
-    def list_logs(self):
-        return self.repository.get_all()
+    def list_logs(self, limit: int = 100):
+        if limit <= 0:
+            raise ValueError("Limit must be greater than zero.")
+        return self.repository.get_recent(limit)
 
     def list_by_user(self, user_id: int):
         return self.repository.get_by_user_id(user_id)

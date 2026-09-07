@@ -294,6 +294,13 @@ def test_list_incident_events_empty(auth_client):
     assert response.get_json() == []
 
 
+def test_list_incident_events_missing_incident_returns_404(auth_client):
+    """An unknown incident ID is not reported as an empty event list."""
+    response = auth_client.get("/api/incidents/999999/events")
+    assert response.status_code == 404
+    assert response.get_json() == {"error": "Incident not found"}
+
+
 def test_list_incident_events_returns_links(auth_client, correlation_data):
     """The list endpoint returns all correlated event links."""
     incident_id = create_incident(auth_client)

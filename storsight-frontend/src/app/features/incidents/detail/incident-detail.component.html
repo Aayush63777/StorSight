@@ -136,6 +136,27 @@
       <span class="section-count">{{ correlatedLinks().length }}</span>
     </header>
 
+    @if (correlatedError()) {
+      <ss-error-banner
+        [message]="correlatedError()"
+        [dismissible]="true"
+        (dismissed)="correlatedError.set(null)">
+      </ss-error-banner>
+      <div class="retry-row">
+        <button class="btn btn--ghost btn--sm" (click)="retryCorrelatedData()">
+          Retry event data
+        </button>
+      </div>
+    }
+
+    @if (resourceError()) {
+      <ss-error-banner
+        [message]="resourceError()"
+        [dismissible]="true"
+        (dismissed)="resourceError.set(null)">
+      </ss-error-banner>
+    }
+
     @if (correlatedLinks().length === 0) {
       <div class="card" style="padding:0">
         <ss-empty-state

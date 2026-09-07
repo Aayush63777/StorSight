@@ -67,7 +67,11 @@ class StorageResourceService:
             return None
 
         if "name" in updates:
-            resource.name = self._validate_name(updates["name"])
+            name = self._validate_name(updates["name"])
+            existing = self.repository.get_by_name(name)
+            if existing is not None and existing.id != resource_id:
+                raise ValueError("Storage resource already exists.")
+            resource.name = name
 
         if "resource_type" in updates:
             resource.resource_type = self._validate_resource_type(

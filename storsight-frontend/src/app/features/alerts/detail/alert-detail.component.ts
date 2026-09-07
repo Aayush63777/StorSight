@@ -46,6 +46,7 @@ export class AlertDetailComponent implements OnInit {
   resolving        = signal(false);
   error            = signal<string | null>(null);
   resolveError     = signal<string | null>(null);
+  resourceError    = signal<string | null>(null);
   showConfirm      = signal(false);
   alert            = signal<Alert | null>(null);
   resource         = signal<StorageResource | null>(null);
@@ -65,7 +66,10 @@ export class AlertDetailComponent implements OnInit {
       next: (a) => {
         this.alert.set(a);
         this.resourceSvc.get(a.resource_id).pipe(
-          catchError(() => of(null)),
+          catchError(() => {
+            this.resourceError.set('Storage resource details are unavailable.');
+            return of(null);
+          }),
         ).subscribe(r => {
           this.resource.set(r);
           this.loading.set(false);

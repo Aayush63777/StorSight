@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 
 from app.models.incident import Incident
 from app.repositories.incident import IncidentRepository
+from app.repositories.user import UserRepository
 
 
 class IncidentService:
@@ -12,8 +13,9 @@ class IncidentService:
     ALLOWED_SEVERITIES = {"low", "medium", "high", "critical"}
     ALLOWED_STATUSES = {"open", "in_progress", "resolved"}
 
-    def __init__(self, repository=None):
+    def __init__(self, repository=None, user_repository=None):
         self.repository = repository or IncidentRepository()
+        self.user_repository = user_repository or UserRepository()
 
     # --- retrieval ---
 
@@ -45,6 +47,7 @@ class IncidentService:
     ):
         title = self._validate_title(title)
         severity = self._validate_severity(severity)
+        self._validate_assignee(assignee_id)
 
         incident = Incident(
             title=title,
@@ -65,6 +68,7 @@ class IncidentService:
         if incident is None:
             return None
 
+        self._validate_assignee(assignee_id)
         incident.assignee_id = assignee_id
         self.repository.commit()
         return incident
@@ -126,3 +130,7 @@ class IncidentService:
                 f"{sorted(self.ALLOWED_STATUSES)}"
             )
         return status.strip().lower()
+
+    def _validate_assignee(self, assignee_id: int | None) -> None:
+        if assignee_id is not None and self.user_repository.get_by_id(assignee_id) is None:
+            raise ValueError("Assignee not found.")

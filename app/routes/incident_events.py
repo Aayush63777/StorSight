@@ -3,6 +3,7 @@
 from flask import Blueprint, jsonify, request
 
 from app.auth.decorators import login_required
+from app.services.incident_service import IncidentService
 from app.services.incident_event_service import IncidentEventService
 
 
@@ -13,6 +14,7 @@ incident_events_bp = Blueprint(
 )
 
 service = IncidentEventService()
+incident_service = IncidentService()
 
 
 def _serialize_link(link):
@@ -34,6 +36,9 @@ def _serialize_link(link):
 @login_required
 def list_incident_events(incident_id):
     """List all events correlated with an incident."""
+    if incident_service.get_by_id(incident_id) is None:
+        return jsonify({"error": "Incident not found"}), 404
+
     links = service.list_by_incident(incident_id)
     return jsonify([_serialize_link(link) for link in links]), 200
 

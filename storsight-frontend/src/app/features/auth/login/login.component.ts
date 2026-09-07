@@ -42,16 +42,36 @@ import { ErrorBannerComponent } from '../../../shared/components/error-banner/er
 
           <div class="form-group">
             <label for="password">Password</label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              class="form-control"
-              [(ngModel)]="password"
-              required
-              autocomplete="current-password"
-              [disabled]="loading()"
-              aria-required="true" />
+            <div class="password-field">
+              <input
+                id="password"
+                name="password"
+                [type]="showPassword() ? 'text' : 'password'"
+                class="form-control"
+                [(ngModel)]="password"
+                required
+                autocomplete="current-password"
+                [disabled]="loading()"
+                aria-required="true" />
+              <button
+                type="button"
+                class="password-field__toggle"
+                [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
+                [attr.aria-pressed]="showPassword()"
+                [disabled]="loading()"
+                (click)="togglePasswordVisibility()">
+                @if (showPassword()) {
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M3 3l18 18M10.6 10.6a2 2 0 0 0 2.8 2.8M9.9 4.2A10.8 10.8 0 0 1 12 4c5.2 0 8.7 4 10 8a12.5 12.5 0 0 1-2.1 3.8M6.2 6.2C3.8 7.8 2.5 10.2 2 12c1.3 4 4.8 8 10 8 1 0 1.9-.1 2.7-.4" />
+                  </svg>
+                } @else {
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M2 12s3.5-8 10-8 10 8 10 8-3.5 8-10 8S2 12 2 12Z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                }
+              </button>
+            </div>
           </div>
 
           <button
@@ -88,6 +108,44 @@ import { ErrorBannerComponent } from '../../../shared/components/error-banner/er
       &__title { font-size: 1.75rem; font-weight: 700; color: var(--color-primary); }
       &__subtitle { color: var(--color-text-muted); font-size: 0.875rem; margin-top: 0.25rem; }
     }
+    .password-field {
+      position: relative;
+
+      .form-control { padding-right: 2.75rem; }
+
+      &__toggle {
+        position: absolute;
+        top: 50%;
+        right: 0.75rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.5rem;
+        height: 1.5rem;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        color: var(--color-text-muted);
+        cursor: pointer;
+        transform: translateY(-50%);
+
+        &:hover:not(:disabled), &:focus-visible {
+          color: var(--color-text);
+        }
+
+        &:disabled { cursor: default; opacity: 0.6; }
+
+        svg {
+          width: 1.125rem;
+          height: 1.125rem;
+          fill: none;
+          stroke: currentColor;
+          stroke-linecap: round;
+          stroke-linejoin: round;
+          stroke-width: 1.7;
+        }
+      }
+    }
   `],
 })
 export class LoginComponent {
@@ -98,6 +156,11 @@ export class LoginComponent {
   password = '';
   loading = signal(false);
   errorMessage = signal<string | null>(null);
+  showPassword = signal(false);
+
+  togglePasswordVisibility(): void {
+    this.showPassword.update((visible) => !visible);
+  }
 
   onSubmit(): void {
     if (!this.username || !this.password) return;

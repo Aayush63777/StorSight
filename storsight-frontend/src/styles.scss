@@ -23,10 +23,20 @@ body {
   font-family: var(--font-sans);
   font-size: var(--font-size-base);
   color: var(--color-text);
-  background: var(--color-bg);
+  background:
+    radial-gradient(circle at 88% -10%, rgba(88, 166, 255, 0.09), transparent 28rem),
+    radial-gradient(circle at 8% 18%, rgba(121, 217, 196, 0.045), transparent 24rem),
+    var(--color-bg);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+button:focus-visible,
+a:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
 }
 
 a {

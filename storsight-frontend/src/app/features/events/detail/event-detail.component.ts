@@ -45,6 +45,7 @@ export class EventDetailComponent implements OnInit {
 
   loading  = signal(true);
   error    = signal<string | null>(null);
+  resourceError = signal<string | null>(null);
   event    = signal<InfraEvent | null>(null);
   resource = signal<StorageResource | null>(null);
 
@@ -64,7 +65,10 @@ export class EventDetailComponent implements OnInit {
         this.event.set(e);
         // Fetch the associated resource; suppress errors — ID shown as fallback
         this.resourceSvc.get(e.resource_id).pipe(
-          catchError(() => of(null)),
+          catchError(() => {
+            this.resourceError.set('Storage resource details are unavailable.');
+            return of(null);
+          }),
         ).subscribe(r => {
           this.resource.set(r);
           this.loading.set(false);

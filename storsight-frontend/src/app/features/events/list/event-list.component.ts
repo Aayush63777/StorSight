@@ -58,6 +58,7 @@ export class EventListComponent implements OnInit, OnDestroy {
   loading          = signal(true);
   resourcesLoading = signal(true);
   error            = signal<string | null>(null);
+  resourceError    = signal<string | null>(null);
   events           = signal<InfraEvent[]>([]);
   resources        = signal<StorageResource[]>([]);
 
@@ -96,11 +97,7 @@ export class EventListComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     // Load resource list once
-    this.resourceSvc.list().pipe(catchError(() => of([]))).subscribe(list => {
-      this.resources.set(list);
-      this.resourcesLoading.set(false);
-      this.cdr.markForCheck();
-    });
+    this.loadResources();
 
     // Client-side event_type debounce
     this.typeSearch$.pipe(
@@ -113,6 +110,19 @@ export class EventListComponent implements OnInit, OnDestroy {
     });
 
     this.loadEvents();
+  }
+
+  loadResources(): void {
+    this.resourcesLoading.set(true);
+    this.resourceError.set(null);
+    this.resourceSvc.list().pipe(catchError(() => {
+      this.resourceError.set('Failed to load storage resources for filtering.');
+      return of([]);
+    })).subscribe(list => {
+      this.resources.set(list);
+      this.resourcesLoading.set(false);
+      this.cdr.markForCheck();
+    });
   }
 
   ngOnDestroy(): void {

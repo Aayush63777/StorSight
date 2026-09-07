@@ -95,6 +95,37 @@ describe('LoginComponent', () => {
     expect(btn).toBeTruthy();
   }));
 
+  it('should keep the password hidden by default', fakeAsync(() => {
+    fixture.detectChanges();
+    flushMe();
+    tick(); fixture.detectChanges();
+
+    const input = fixture.nativeElement.querySelector('#password') as HTMLInputElement;
+    const toggle = fixture.nativeElement.querySelector('.password-field__toggle') as HTMLButtonElement;
+
+    expect(input.type).toBe('password');
+    expect(toggle.getAttribute('aria-label')).toBe('Show password');
+  }));
+
+  it('should toggle password visibility from the accessible button', fakeAsync(() => {
+    fixture.detectChanges();
+    flushMe();
+    tick(); fixture.detectChanges();
+
+    const input = fixture.nativeElement.querySelector('#password') as HTMLInputElement;
+    const toggle = fixture.nativeElement.querySelector('.password-field__toggle') as HTMLButtonElement;
+
+    toggle.click();
+    fixture.detectChanges();
+    expect(input.type).toBe('text');
+    expect(toggle.getAttribute('aria-label')).toBe('Hide password');
+
+    toggle.click();
+    fixture.detectChanges();
+    expect(input.type).toBe('password');
+    expect(toggle.getAttribute('aria-label')).toBe('Show password');
+  }));
+
   it('should initialise with empty credentials', () => {
     expect(component.username).toBe('');
     expect(component.password).toBe('');

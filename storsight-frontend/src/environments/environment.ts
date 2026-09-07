@@ -1,4 +1,4 @@
 export const environment = {
-  production: true,
-  apiBaseUrl: 'https://storsight.onrender.com',
+  production: false,
+  apiBaseUrl: 'http://localhost:5000',
 };

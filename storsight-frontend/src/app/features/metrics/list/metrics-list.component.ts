@@ -51,6 +51,7 @@ export class MetricsListComponent implements OnInit, OnDestroy {
   loading         = signal(true);
   resourcesLoading = signal(true);
   error           = signal<string | null>(null);
+  resourceError   = signal<string | null>(null);
   metrics         = signal<Metric[]>([]);
   resources       = signal<StorageResource[]>([]);
 
@@ -79,13 +80,7 @@ export class MetricsListComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     // Load resources for the dropdown (once, no N+1)
-    this.resourceSvc.list().pipe(
-      catchError(() => of([])),
-    ).subscribe(list => {
-      this.resources.set(list);
-      this.resourcesLoading.set(false);
-      this.cdr.markForCheck();
-    });
+    this.loadResources();
 
     // Wire metric name debounce → API call
     this.nameInput$.pipe(
@@ -98,6 +93,19 @@ export class MetricsListComponent implements OnInit, OnDestroy {
     });
 
     this.loadMetrics();
+  }
+
+  loadResources(): void {
+    this.resourcesLoading.set(true);
+    this.resourceError.set(null);
+    this.resourceSvc.list().pipe(catchError(() => {
+      this.resourceError.set('Failed to load storage resources for filtering.');
+      return of([]);
+    })).subscribe(list => {
+      this.resources.set(list);
+      this.resourcesLoading.set(false);
+      this.cdr.markForCheck();
+    });
   }
 
   ngOnDestroy(): void {

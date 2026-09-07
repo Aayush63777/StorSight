@@ -123,7 +123,10 @@ def assign_incident(incident_id):
     if not isinstance(assignee_id, int) or assignee_id <= 0:
         return jsonify({"error": "assignee_id must be a positive integer."}), 400
 
-    incident = service.assign_incident(incident_id, assignee_id)
+    try:
+        incident = service.assign_incident(incident_id, assignee_id)
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
 
     if incident is None:
         return jsonify({"error": "Incident not found"}), 404

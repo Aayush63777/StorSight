@@ -168,6 +168,27 @@ def test_update_storage_resource(authenticated_client):
     assert data["capacity_used"] == 700
 
 
+def test_update_storage_resource_duplicate_name_returns_400(authenticated_client):
+    """Renaming a resource to an existing name is rejected."""
+    first = authenticated_client.post(
+        "/api/storage-resources/",
+        json={"name": "storage-node-01", "resource_type": "SAN"},
+    )
+    second = authenticated_client.post(
+        "/api/storage-resources/",
+        json={"name": "storage-node-02", "resource_type": "SAN"},
+    )
+
+    response = authenticated_client.patch(
+        f"/api/storage-resources/{second.get_json()['id']}",
+        json={"name": "storage-node-01"},
+    )
+
+    assert first.status_code == 201
+    assert response.status_code == 400
+    assert response.get_json() == {"error": "Storage resource already exists."}
+
+
 def test_delete_storage_resource(authenticated_client):
     """Authenticated users can delete a resource."""
     create_response = authenticated_client.post(

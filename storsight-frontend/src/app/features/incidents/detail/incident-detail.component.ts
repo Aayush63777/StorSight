@@ -71,6 +71,8 @@ export class IncidentDetailComponent implements OnInit {
   correlatedLinks = signal<IncidentEvent[]>([]);
   eventMap        = signal<Map<number, InfraEvent>>(new Map());
   resourceMap     = signal<Map<number, StorageResource>>(new Map());
+  correlatedError = signal<string | null>(null);
+  resourceError   = signal<string | null>(null);
 
   // ── Risk ──────────────────────────────────────────────────
   riskLoading = signal(true);
@@ -135,7 +137,10 @@ export class IncidentDetailComponent implements OnInit {
     // a single failure does not prevent the page from loading.
     forkJoin({
       incident: this.incidentSvc.get(id),
-      links:    this.incidentSvc.listEvents(id).pipe(catchError(() => of([]))),
+      links:    this.incidentSvc.listEvents(id).pipe(catchError(() => {
+        this.correlatedError.set('Failed to load correlated events.');
+        return of([]);
+      })),
       risk:     this.incidentSvc.getRisk(id).pipe(catchError((err: HttpErrorResponse) => {
         this.riskError.set(err.status === 404 ? 'Risk score not available.' : 'Failed to load risk score.');
         this.riskLoading.set(false);
@@ -188,7 +193,10 @@ export class IncidentDetailComponent implements OnInit {
         }
 
         const eventFetches = eventIds.map(eid =>
-          this.eventSvc.get(eid).pipe(catchError(() => of(null))),
+          this.eventSvc.get(eid).pipe(catchError(() => {
+            this.correlatedError.set('Some correlated event details could not be loaded.');
+            return of(null);
+          })),
         );
 
         forkJoin(eventFetches).subscribe(events => {
@@ -206,7 +214,10 @@ export class IncidentDetailComponent implements OnInit {
           }
 
           const resFetches = [...resourceIds].map(rid =>
-            this.resourceSvc.get(rid).pipe(catchError(() => of(null))),
+            this.resourceSvc.get(rid).pipe(catchError(() => {
+              this.resourceError.set('Some related storage resources could not be loaded.');
+              return of(null);
+            })),
           );
           forkJoin(resFetches).subscribe(resources => {
             const rMap = new Map<number, StorageResource>();
@@ -279,6 +290,12 @@ export class IncidentDetailComponent implements OnInit {
       next: (list) => { this.auditItems.set(list); this.auditLoading.set(false); this.cdr.markForCheck(); },
       error: () => { this.auditError.set('Failed to load audit trail.'); this.auditLoading.set(false); this.cdr.markForCheck(); },
     });
+  }
+
+  retryCorrelatedData(): void {
+    this.correlatedError.set(null);
+    this.resourceError.set(null);
+    this.loadAll(this.incidentId);
   }
 
   // ── Resolve workflow ──────────────────────────────────────

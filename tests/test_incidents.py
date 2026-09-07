@@ -214,6 +214,16 @@ def test_create_incident_invalid_severity_returns_400(auth_client):
     assert "Invalid severity" in data["error"]
 
 
+def test_create_incident_invalid_assignee_returns_400(auth_client):
+    """An unknown assignee is rejected before database commit."""
+    response = auth_client.post(
+        "/api/incidents/",
+        json={"title": "Unassigned target", "assignee_id": 999999},
+    )
+    assert response.status_code == 400
+    assert response.get_json() == {"error": "Assignee not found."}
+
+
 # ---------------------------------------------------------------------------
 # Retrieve by ID
 # ---------------------------------------------------------------------------
@@ -414,6 +424,17 @@ def test_assign_incident_missing_assignee_id_returns_400(auth_client):
     )
     assert response.status_code == 400
     assert response.get_json() == {"error": "assignee_id is required."}
+
+
+def test_assign_incident_unknown_assignee_returns_400(auth_client):
+    """Assigning an unknown user is rejected before database commit."""
+    created = create_incident(auth_client, title="Invalid assignee", severity="low")
+    response = auth_client.patch(
+        f"/api/incidents/{created.get_json()['id']}/assign",
+        json={"assignee_id": 999999},
+    )
+    assert response.status_code == 400
+    assert response.get_json() == {"error": "Assignee not found."}
 
 
 # ---------------------------------------------------------------------------

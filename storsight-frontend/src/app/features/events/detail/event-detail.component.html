@@ -16,6 +16,10 @@
     </a>
   </ss-page-header>
 
+  @if (resourceError()) {
+    <ss-error-banner [message]="resourceError()" [dismissible]="true" (dismissed)="resourceError.set(null)"></ss-error-banner>
+  }
+
   <div class="detail-grid">
 
     <!-- Severity + overview card -->
