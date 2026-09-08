@@ -1,5 +1,11 @@
-"""Authentication application service."""
+"""Authentication and password-recovery application service."""
 
+import hashlib
+import secrets
+from datetime import datetime, timedelta, timezone
+
+from app.extensions import db
+from app.models.password_reset_token import PasswordResetToken
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from app.models.user import User
@@ -40,3 +46,60 @@ class AuthService:
             return None
 
         return user
+
+    def create_password_reset(self, email: str):
+        """Create a single-use reset token for an active user."""
+        user = self.repository.get_by_email(email)
+
+        if user is None or not user.is_active:
+            return None
+
+        now = datetime.now(timezone.utc)
+        PasswordResetToken.query.filter_by(user_id=user.id, used_at=None).update(
+            {"used_at": now}
+        )
+
+        raw_token = secrets.token_urlsafe(32)
+        reset_token = PasswordResetToken(
+            user_id=user.id,
+            token_hash=hashlib.sha256(raw_token.encode()).hexdigest(),
+            expires_at=now
+            + timedelta(minutes=self._token_ttl_minutes()),
+        )
+        db.session.add(reset_token)
+        db.session.commit()
+        return user, raw_token
+
+    def reset_password(self, raw_token: str, password: str) -> bool:
+        """Consume a valid reset token and replace the user's password."""
+        if not raw_token or not password:
+            return False
+
+        token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
+        reset_token = PasswordResetToken.query.filter_by(
+            token_hash=token_hash
+        ).first()
+        now = datetime.now(timezone.utc)
+
+        if reset_token is None or reset_token.used_at is not None:
+            return False
+        if reset_token.expires_at.replace(tzinfo=timezone.utc) <= now:
+            return False
+        if reset_token.user is None or not reset_token.user.is_active:
+            return False
+
+        reset_token.user.password_hash = self.hash_password(password)
+        reset_token.used_at = now
+        PasswordResetToken.query.filter(
+            PasswordResetToken.user_id == reset_token.user_id,
+            PasswordResetToken.id != reset_token.id,
+            PasswordResetToken.used_at.is_(None),
+        ).update({"used_at": now})
+        db.session.commit()
+        return True
+
+    @staticmethod
+    def _token_ttl_minutes() -> int:
+        from flask import current_app
+
+        return current_app.config["PASSWORD_RESET_TOKEN_TTL_MINUTES"]

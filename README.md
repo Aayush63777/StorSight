@@ -221,6 +221,70 @@ The frontend runs at `http://localhost:4200`.
 
 ---
 
+## Production Deployment
+
+The backend is deployable as a WSGI application through `wsgi.py` and the
+included `Procfile`. Use a managed PostgreSQL database, HTTPS, and a managed
+SMTP provider in production. Do not run Flask's development server publicly.
+
+### Backend (Render or another Gunicorn host)
+
+1. Configure these environment variables in the hosting provider:
+
+    - `APP_ENV=production`
+    - `SECRET_KEY` with a randomly generated value of at least 32 characters
+    - `DATABASE_URL=postgresql+psycopg2://...`
+    - `FRONTEND_ORIGIN=https://<your-frontend-domain>`
+    - `SESSION_COOKIE_SECURE=true`
+    - `RATE_LIMIT_STORAGE_URI` using Redis for multi-instance deployments
+    - SMTP variables: `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `MAIL_FROM`
+
+2. Deploy with the included start command:
+
+    ```text
+    gunicorn --bind 0.0.0.0:$PORT --workers 2 --timeout 120 wsgi:app
+    ```
+
+3. Run migrations once after deployment:
+
+    ```bash
+    flask --app wsgi:app db upgrade
+    ```
+
+4. Bootstrap the first admin once, using environment variables rather than a
+    hardcoded password:
+
+    ```bash
+    python seed.py
+    ```
+
+    Remove or rotate the bootstrap password after the first login.
+
+### Frontend (Vercel or another static host)
+
+Set the production API URL in
+`storsight-frontend/src/environments/environment.prod.ts` before building.
+Then deploy from `storsight-frontend`:
+
+```bash
+npm ci
+npm run build
+```
+
+Publish `dist/storsight-frontend/browser` and configure SPA fallback to
+`index.html`. The deployed frontend origin must exactly match the backend's
+`FRONTEND_ORIGIN` value.
+
+### Production checks
+
+- Confirm `GET /health` returns `{"status":"ok"}`.
+- Confirm HTTPS is active and session cookies have the `Secure` attribute.
+- Confirm login rate limiting uses shared Redis storage when scaled out.
+- Confirm SMTP reset emails are delivered without logging reset URLs.
+- Confirm the default/bootstrap admin password has been rotated.
+
+---
+
 ## Running Tests
 
 ### Backend tests

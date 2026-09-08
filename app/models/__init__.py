@@ -6,6 +6,7 @@ from app.models.event import Event
 from app.models.incident import Incident
 from app.models.incident_event import IncidentEvent
 from app.models.metric import Metric
+from app.models.password_reset_token import PasswordResetToken
 from app.models.recommendation import Recommendation
 from app.models.role import Role
 from app.models.root_cause_analysis import RootCauseAnalysis
@@ -20,6 +21,7 @@ __all__ = [
     "Incident",
     "IncidentEvent",
     "Metric",
+    "PasswordResetToken",
     "Recommendation",
     "Role",
     "RootCauseAnalysis",

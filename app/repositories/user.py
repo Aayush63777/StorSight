@@ -16,7 +16,7 @@ class UserRepository(BaseRepository[User]):
 
     def get_by_email(self, email: str):
         """Return a user by email."""
-        return self.model.query.filter_by(email=email).first()
+        return self.model.query.filter_by(email=email.strip().lower()).first()
 
     def get_active_users(self):
         """Return all active users."""

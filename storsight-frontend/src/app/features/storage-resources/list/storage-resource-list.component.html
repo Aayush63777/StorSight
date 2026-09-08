@@ -9,8 +9,10 @@
 <!-- Filter bar -->
 <div class="filter-bar">
   <div class="filter-bar__search">
+    <label class="filter-bar__label" for="resource-search">Search resources</label>
     <span class="filter-bar__icon" aria-hidden="true">⌕</span>
     <input
+      id="resource-search"
       type="search"
       class="form-control filter-bar__input"
       placeholder="Search by name…"
@@ -20,6 +22,8 @@
   </div>
 
   <div class="filter-bar__selects">
+    <label class="filter-bar__field">
+      <span class="filter-bar__label">Status</span>
     <select
       class="form-control filter-bar__select"
       [value]="statusFilter()"
@@ -30,7 +34,10 @@
         <option [value]="s">{{ s }}</option>
       }
     </select>
+    </label>
 
+    <label class="filter-bar__field">
+      <span class="filter-bar__label">Resource type</span>
     <select
       class="form-control filter-bar__select"
       [value]="resourceTypeFilter()"
@@ -41,6 +48,7 @@
         <option [value]="t">{{ t }}</option>
       }
     </select>
+    </label>
 
     @if (hasActiveFilters()) {
       <button class="btn btn--ghost filter-bar__clear" (click)="clearFilters()" aria-label="Clear all filters">
@@ -168,5 +176,32 @@
         @if (hasActiveFilters()) { (filtered) }
       </span>
     </div>
+  </div>
+
+  <div class="resource-cards" aria-label="Storage resource cards">
+    @for (r of filtered(); track r.id) {
+      <article class="resource-card">
+        <div class="resource-card__header">
+          <div>
+            <a class="resource-card__name" [routerLink]="['/storage-resources', r.id]">{{ r.name }}</a>
+            <span class="resource-id">ID {{ r.id }} · {{ r.resource_type }}</span>
+          </div>
+          <ss-status-badge [status]="r.status"></ss-status-badge>
+        </div>
+        <div class="resource-card__meta">
+          <div><span>Health</span><ss-status-badge [status]="r.health_status"></ss-status-badge></div>
+          <div><span>Capacity</span><strong>{{ r.capacity_total ? formatCapacity(r.capacity_used) + ' / ' + formatCapacity(r.capacity_total) : 'Not reported' }}</strong></div>
+          <div><span>Updated</span><strong>{{ r.updated_at | relativeTime }}</strong></div>
+        </div>
+        @if (r.capacity_total) {
+          <div class="util-bar" [attr.aria-label]="utilPercent(r) + '% utilised'">
+            <div class="util-bar__track" role="progressbar" [attr.aria-valuenow]="utilPercent(r)" aria-valuemin="0" aria-valuemax="100">
+              <div class="util-bar__fill" [class]="utilClass(r)" [style.width.%]="utilPercent(r)"></div>
+            </div>
+            <span class="util-bar__label">{{ utilPercent(r) }}% utilised</span>
+          </div>
+        }
+      </article>
+    }
   </div>
 }

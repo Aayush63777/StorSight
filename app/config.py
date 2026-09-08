@@ -27,6 +27,21 @@ class BaseConfig:
     MAIL_FROM = os.getenv("MAIL_FROM")
     MAIL_USE_TLS = os.getenv("MAIL_USE_TLS", "true").lower() == "true"
 
+    PASSWORD_RESET_TOKEN_TTL_MINUTES = int(
+        os.getenv("PASSWORD_RESET_TOKEN_TTL_MINUTES", "30")
+    )
+    SMTP_HOST = os.getenv("SMTP_HOST")
+    SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+    SMTP_USERNAME = os.getenv("SMTP_USERNAME")
+    SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
+    SMTP_USE_TLS = os.getenv("SMTP_USE_TLS", "true").lower() == "true"
+    MAIL_FROM = os.getenv("MAIL_FROM", "no-reply@storsight.local")
+    RATE_LIMIT_STORAGE_URI = os.getenv("RATE_LIMIT_STORAGE_URI", "memory://")
+    RATE_LIMIT_ENABLED = os.getenv("RATE_LIMIT_ENABLED", "true").lower() == "true"
+    RATELIMIT_STORAGE_URI = RATE_LIMIT_STORAGE_URI
+    RATELIMIT_ENABLED = RATE_LIMIT_ENABLED
+    CSRF_ORIGIN_CHECK_ENABLED = True
+
 
 class DevelopmentConfig(BaseConfig):
     """Configuration for local development."""
@@ -61,6 +76,8 @@ class TestingConfig(BaseConfig):
     SESSION_COOKIE_SECURE = False
 
     FRONTEND_ORIGIN = "http://localhost:4200"
+    RATE_LIMIT_ENABLED = False
+    RATELIMIT_ENABLED = False
 
 
 class ProductionConfig(BaseConfig):

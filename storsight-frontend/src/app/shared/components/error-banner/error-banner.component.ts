@@ -27,7 +27,7 @@ import { CommonModule } from '@angular/common';
       background: var(--color-severity-critical-bg, #fee2e2);
       border: 1px solid var(--color-severity-critical, #ef4444);
       border-radius: var(--radius-md);
-      color: #991b1b;
+      color: var(--color-severity-critical-text, #ffa198);
       font-size: 0.875rem;
     }
     .error-banner__text { flex: 1; }
@@ -39,6 +39,11 @@ import { CommonModule } from '@angular/common';
       font-size: 1rem;
       line-height: 1;
       padding: 0;
+    }
+    .error-banner__dismiss:focus-visible {
+      border-radius: var(--radius-sm);
+      outline: 2px solid currentColor;
+      outline-offset: 2px;
     }
   `],
 })

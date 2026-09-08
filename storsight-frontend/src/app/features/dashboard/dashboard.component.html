@@ -49,11 +49,22 @@
   <!-- ── Main content (only when loaded) ── -->
   @if (!loading() && !error()) {
 
+    @if (attentionCount() > 0) {
+      <section class="attention-banner" aria-labelledby="attention-title">
+        <span class="attention-banner__icon" aria-hidden="true">!</span>
+        <div>
+          <h2 id="attention-title">Attention required</h2>
+          <p>{{ attentionCount() }} active operational signal{{ attentionCount() === 1 ? '' : 's' }} require review.</p>
+        </div>
+        <a class="btn btn--ghost" routerLink="/alerts">Review alerts</a>
+      </section>
+    }
+
     <!-- ── KPI cards ── -->
     <section class="kpi-grid" aria-label="Key performance indicators">
 
       <!-- Total Resources -->
-      <article class="kpi-card" aria-label="Total storage resources">
+      <a class="kpi-card" routerLink="/storage-resources" aria-label="View storage resources">
         <div class="kpi-card__icon kpi-card__icon--blue" aria-hidden="true">▣</div>
         <div class="kpi-card__body">
           <div class="kpi-card__value">{{ totalResources() }}</div>
@@ -63,11 +74,12 @@
             healthy
           </div>
         </div>
-      </article>
+      </a>
 
       <!-- Active Alerts -->
-      <article
+      <a
         class="kpi-card"
+        routerLink="/alerts"
         [class.kpi-card--alert]="activeAlerts() > 0"
         aria-label="Active alerts">
         <div
@@ -90,11 +102,12 @@
             }
           </div>
         </div>
-      </article>
+      </a>
 
       <!-- Open Incidents -->
-      <article
+      <a
         class="kpi-card"
+        routerLink="/incidents"
         [class.kpi-card--warn]="openIncidents() > 0"
         aria-label="Open incidents">
         <div
@@ -117,11 +130,12 @@
             }
           </div>
         </div>
-      </article>
+      </a>
 
       <!-- Critical Incidents -->
-      <article
+      <a
         class="kpi-card"
+        routerLink="/incidents"
         [class.kpi-card--critical]="criticalIncidents() > 0"
         aria-label="Critical open incidents">
         <div
@@ -142,7 +156,7 @@
             }
           </div>
         </div>
-      </article>
+      </a>
 
     </section>
 
@@ -171,6 +185,7 @@
               </div>
               <div class="health-bar__track" role="progressbar"
                 [attr.aria-valuenow]="resourcesByStatus().healthy"
+                aria-valuemin="0"
                 [attr.aria-valuemax]="totalResources()">
                 <div class="health-bar__fill health-bar__fill--healthy"
                   [style.width.%]="(resourcesByStatus().healthy / totalResources()) * 100">
@@ -188,6 +203,7 @@
               </div>
               <div class="health-bar__track" role="progressbar"
                 [attr.aria-valuenow]="resourcesByStatus().warning"
+                aria-valuemin="0"
                 [attr.aria-valuemax]="totalResources()">
                 <div class="health-bar__fill health-bar__fill--warning"
                   [style.width.%]="(resourcesByStatus().warning / totalResources()) * 100">
@@ -205,6 +221,7 @@
               </div>
               <div class="health-bar__track" role="progressbar"
                 [attr.aria-valuenow]="resourcesByStatus().critical"
+                aria-valuemin="0"
                 [attr.aria-valuemax]="totalResources()">
                 <div class="health-bar__fill health-bar__fill--critical"
                   [style.width.%]="(resourcesByStatus().critical / totalResources()) * 100">
@@ -222,6 +239,7 @@
               </div>
               <div class="health-bar__track" role="progressbar"
                 [attr.aria-valuenow]="resourcesByStatus().offline"
+                aria-valuemin="0"
                 [attr.aria-valuemax]="totalResources()">
                 <div class="health-bar__fill health-bar__fill--offline"
                   [style.width.%]="(resourcesByStatus().offline / totalResources()) * 100">

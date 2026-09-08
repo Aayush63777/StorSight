@@ -63,11 +63,10 @@ export class StorageResourceListComponent implements OnInit, OnDestroy {
   statusFilter       = signal('');
   resourceTypeFilter = signal('');
 
-  // ── Filtered view (client-side name search on top of API results) ──
   filtered = computed(() => {
     const name = this.nameFilter().toLowerCase().trim();
     return name
-      ? this.resources().filter(r => r.name.toLowerCase().includes(name))
+      ? this.resources().filter(resource => resource.name.toLowerCase().includes(name))
       : this.resources();
   });
 
@@ -87,7 +86,7 @@ export class StorageResourceListComponent implements OnInit, OnDestroy {
       takeUntil(this.destroy$),
     ).subscribe(v => {
       this.nameFilter.set(v);
-      this.cdr.markForCheck();
+      this.loadResources();
     });
 
     this.loadResources();
@@ -104,16 +103,11 @@ export class StorageResourceListComponent implements OnInit, OnDestroy {
 
   onStatusChange(value: string): void {
     this.statusFilter.set(value);
-    this.nameFilter.set('');
-    this.nameSearch$.next('');
     this.loadResources();
   }
 
   onResourceTypeChange(value: string): void {
     this.resourceTypeFilter.set(value);
-    this.statusFilter.set('');
-    this.nameFilter.set('');
-    this.nameSearch$.next('');
     this.loadResources();
   }
 
@@ -129,10 +123,11 @@ export class StorageResourceListComponent implements OnInit, OnDestroy {
     this.loading.set(true);
     this.error.set(null);
 
+    const name         = this.nameFilter().trim() || undefined;
     const status       = this.statusFilter() || undefined;
     const resource_type = this.resourceTypeFilter() || undefined;
 
-    this.svc.list({ status, resource_type }).subscribe({
+    this.svc.list({ name, status, resource_type }).subscribe({
       next: (list) => {
         this.resources.set(list);
         this.loading.set(false);

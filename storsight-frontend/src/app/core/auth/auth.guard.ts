@@ -10,7 +10,7 @@ import { AuthService } from './auth.service';
  * Waits for the initial /api/auth/me rehydration to complete before
  * making a decision, preventing a race condition on hard refresh.
  */
-export const authGuard: CanActivateFn = () => {
+export const authGuard: CanActivateFn = (_route, state) => {
   const authService = inject(AuthService);
   const router = inject(Router);
 
@@ -22,7 +22,9 @@ export const authGuard: CanActivateFn = () => {
       if (authService.isAuthenticated) {
         return true;
       }
-      return router.createUrlTree(['/login']);
+      return router.createUrlTree(['/login'], {
+        queryParams: { returnUrl: state.url },
+      });
     }),
   );
 };

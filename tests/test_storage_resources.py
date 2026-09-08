@@ -118,6 +118,37 @@ def test_list_storage_resources(authenticated_client):
     assert data[0]["name"] == "storage-node-01"
 
 
+def test_list_storage_resources_combines_filters(authenticated_client):
+    """Name, status, and resource type filters can be combined."""
+    for payload in (
+        {"name": "prod-san-a", "resource_type": "SAN", "status": "healthy"},
+        {"name": "prod-san-b", "resource_type": "SAN", "status": "warning"},
+        {"name": "prod-nas-a", "resource_type": "NAS", "status": "healthy"},
+    ):
+        assert authenticated_client.post(
+            "/api/storage-resources/", json=payload
+        ).status_code == 201
+
+    response = authenticated_client.get(
+        "/api/storage-resources/?name=prod-san&status=healthy&resource_type=SAN"
+    )
+
+    assert response.status_code == 200
+    assert [resource["name"] for resource in response.get_json()] == [
+        "prod-san-a"
+    ]
+
+
+def test_list_storage_resources_rejects_invalid_status_filter(authenticated_client):
+    """Unsupported status filters return a useful client error."""
+    response = authenticated_client.get(
+        "/api/storage-resources/?status=degraded"
+    )
+
+    assert response.status_code == 400
+    assert response.get_json() == {"error": "Invalid resource status filter."}
+
+
 def test_get_storage_resource(authenticated_client):
     """Authenticated users can retrieve a resource by ID."""
     create_response = authenticated_client.post(

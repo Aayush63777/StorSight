@@ -13,12 +13,21 @@ export interface User {
   role: string | null; // role name string, e.g. "ENGINEER"
 }
 
-export interface UserRecord {
+export interface ManagedUser {
   id: number;
   username: string;
   email: string;
   is_active: boolean;
   role_id: number;
+  role: string | null;
+}
+
+export interface CreateUserPayload {
+  username: string;
+  email: string;
+  password: string;
+  role_id: number;
+  is_active: boolean;
 }
 
 export interface StorageResource {

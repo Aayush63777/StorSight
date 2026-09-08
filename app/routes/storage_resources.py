@@ -42,15 +42,18 @@ def _serialize_resource(resource):
 @login_required
 def list_storage_resources():
     """List storage resources with optional filters."""
+    name = request.args.get("name")
     status = request.args.get("status")
     resource_type = request.args.get("resource_type")
 
-    if status:
-        resources = service.list_by_status(status)
-    elif resource_type:
-        resources = service.list_by_resource_type(resource_type)
-    else:
-        resources = service.list_resources()
+    try:
+        resources = service.list_resources(
+            name=name,
+            status=status,
+            resource_type=resource_type,
+        )
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
 
     return jsonify([_serialize_resource(resource) for resource in resources]), 200
 

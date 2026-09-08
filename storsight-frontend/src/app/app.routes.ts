@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/auth/auth.guard';
+import { adminGuard } from './core/auth/admin.guard';
 import { AppShellComponent } from './layout/app-shell/app-shell.component';
 
 export const routes: Routes = [
@@ -9,6 +10,20 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/auth/login/login.component').then(
         (m) => m.LoginComponent,
+      ),
+  },
+  {
+    path: 'forgot-password',
+    loadComponent: () =>
+      import('./features/auth/forgot-password/forgot-password.component').then(
+        (m) => m.ForgotPasswordComponent,
+      ),
+  },
+  {
+    path: 'reset-password',
+    loadComponent: () =>
+      import('./features/auth/reset-password/reset-password.component').then(
+        (m) => m.ResetPasswordComponent,
       ),
   },
   {
@@ -131,9 +146,10 @@ export const routes: Routes = [
       },
       {
         path: 'users',
+        canActivate: [adminGuard],
         loadComponent: () =>
-          import('./features/users/users.component').then(
-            (m) => m.UsersComponent,
+          import('./features/users/user-management.component').then(
+            (m) => m.UserManagementComponent,
           ),
       },
     ],

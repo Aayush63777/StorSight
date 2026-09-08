@@ -155,6 +155,18 @@ def test_cors_disallowed_origin_does_not_get_acao(client):
     assert acao != OTHER_ORIGIN
 
 
+def test_state_changing_request_from_disallowed_origin_is_rejected(client):
+    """Cookie-authenticated mutations reject cross-origin browser requests."""
+    response = client.post(
+        "/api/auth/login",
+        json={"username": "admin", "password": "wrong"},
+        headers={"Origin": OTHER_ORIGIN},
+    )
+
+    assert response.status_code == 403
+    assert response.get_json() == {"error": "Cross-origin request rejected"}
+
+
 # ---------------------------------------------------------------------------
 # 4. CORS preflight (OPTIONS)
 # ---------------------------------------------------------------------------

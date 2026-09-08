@@ -10,8 +10,9 @@ export class StorageResourceService {
   private readonly http = inject(HttpClient);
   private readonly base = `${environment.apiBaseUrl}/api/storage-resources`;
 
-  list(filters?: { status?: string; resource_type?: string }): Observable<StorageResource[]> {
+  list(filters?: { name?: string; status?: string; resource_type?: string }): Observable<StorageResource[]> {
     let params = new HttpParams();
+    if (filters?.name) params = params.set('name', filters.name);
     if (filters?.status) params = params.set('status', filters.status);
     if (filters?.resource_type) params = params.set('resource_type', filters.resource_type);
     return this.http.get<StorageResource[]>(`${this.base}/`, { params });

@@ -19,8 +19,18 @@ class StorageResourceService:
     def get_by_name(self, name: str):
         return self.repository.get_by_name(name)
 
-    def list_resources(self):
-        return self.repository.get_all()
+    def list_resources(self, name=None, status=None, resource_type=None):
+        if name is not None and not isinstance(name, str):
+            raise ValueError("Invalid resource name filter.")
+        if status is not None and status not in self.ALLOWED_STATUSES:
+            raise ValueError("Invalid resource status filter.")
+        if resource_type is not None and not isinstance(resource_type, str):
+            raise ValueError("Invalid resource type filter.")
+        return self.repository.list_filtered(
+            name=name.strip() if name else None,
+            status=status,
+            resource_type=resource_type.strip() if resource_type else None,
+        )
 
     def list_by_status(self, status: str):
         return self.repository.get_by_status(status)

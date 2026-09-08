@@ -15,6 +15,9 @@
   max-width: 320px;
 }
 
+.filter-bar__field { display: flex; flex-direction: column; gap: var(--space-1); }
+.filter-bar__label { color: var(--color-text-subtle); font-size: var(--font-size-xs); font-weight: 600; }
+
 .filter-bar__icon {
   position: absolute;
   left: 0.65rem;
@@ -52,6 +55,24 @@
   padding: 0;
   overflow: hidden;
 }
+
+.resource-cards { display: none; }
+
+.resource-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+}
+
+.resource-card__header { align-items: flex-start; display: flex; gap: var(--space-3); justify-content: space-between; }
+.resource-card__name { color: var(--color-text); display: block; font-weight: 600; overflow-wrap: anywhere; }
+.resource-card__name:hover { color: var(--color-primary); }
+.resource-card__meta { display: grid; gap: var(--space-3); grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: var(--space-4); }
+.resource-card__meta > div { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; }
+.resource-card__meta span { color: var(--color-text-subtle); font-size: var(--font-size-xs); }
+.resource-card__meta strong { color: var(--color-text-muted); font-size: var(--font-size-xs); overflow-wrap: anywhere; }
+.resource-card .util-bar { margin-top: var(--space-4); }
 
 // ── Resource rows ──────────────────────────────────────────
 
@@ -180,6 +201,7 @@
   .filter-bar__search { max-width: 100%; }
   .filter-bar__selects { flex-direction: column; }
   .filter-bar__select { min-width: 0; width: 100%; }
+  .filter-bar__field { width: 100%; }
 
   // Mobile: show only name, status, capacity
   .table th:nth-child(2),
@@ -188,4 +210,12 @@
   .table td:nth-child(4),
   .table th:nth-child(6),
   .table td:nth-child(6) { display: none; }
+
+  .resource-table-card { display: none; }
+  .resource-cards { display: grid; gap: var(--space-3); }
+  .filter-bar__clear { justify-content: center; width: 100%; }
+}
+
+@media (max-width: 380px) {
+  .resource-card__meta { grid-template-columns: 1fr 1fr; }
 }
