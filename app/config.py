@@ -10,36 +10,61 @@ class BaseConfig:
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    # Session cookie — safe defaults; subclasses override where needed.
+    # ------------------------------------------------------------------
+    # Session
+    # ------------------------------------------------------------------
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
     SESSION_COOKIE_SECURE = False
 
-    # Frontend origin for CORS. Override per environment.
-    FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "http://localhost:4200")
+    # ------------------------------------------------------------------
+    # Frontend / CORS
+    # ------------------------------------------------------------------
+    FRONTEND_ORIGIN = os.getenv(
+        "FRONTEND_ORIGIN",
+        "http://localhost:4200",
+    )
+
+    # ------------------------------------------------------------------
+    # Password reset
+    # ------------------------------------------------------------------
     PASSWORD_RESET_TOKEN_TTL_MINUTES = int(
         os.getenv("PASSWORD_RESET_TOKEN_TTL_MINUTES", "30")
     )
+
+    # ------------------------------------------------------------------
+    # Email / SMTP
+    # ------------------------------------------------------------------
     MAIL_HOST = os.getenv("MAIL_HOST")
     MAIL_PORT = int(os.getenv("MAIL_PORT", "587"))
     MAIL_USERNAME = os.getenv("MAIL_USERNAME")
     MAIL_PASSWORD = os.getenv("MAIL_PASSWORD")
-    MAIL_FROM = os.getenv("MAIL_FROM")
-    MAIL_USE_TLS = os.getenv("MAIL_USE_TLS", "true").lower() == "true"
-
-    PASSWORD_RESET_TOKEN_TTL_MINUTES = int(
-        os.getenv("PASSWORD_RESET_TOKEN_TTL_MINUTES", "30")
+    MAIL_FROM = os.getenv(
+        "MAIL_FROM",
+        "no-reply@storsight.local",
     )
-    SMTP_HOST = os.getenv("SMTP_HOST")
-    SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
-    SMTP_USERNAME = os.getenv("SMTP_USERNAME")
-    SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
-    SMTP_USE_TLS = os.getenv("SMTP_USE_TLS", "true").lower() == "true"
-    MAIL_FROM = os.getenv("MAIL_FROM", "no-reply@storsight.local")
-    RATE_LIMIT_STORAGE_URI = os.getenv("RATE_LIMIT_STORAGE_URI", "memory://")
-    RATE_LIMIT_ENABLED = os.getenv("RATE_LIMIT_ENABLED", "true").lower() == "true"
+    MAIL_USE_TLS = (
+        os.getenv("MAIL_USE_TLS", "true").lower() == "true"
+    )
+
+    # ------------------------------------------------------------------
+    # Rate limiting
+    # ------------------------------------------------------------------
+    RATE_LIMIT_STORAGE_URI = os.getenv(
+        "RATE_LIMIT_STORAGE_URI",
+        "memory://",
+    )
+    RATE_LIMIT_ENABLED = (
+        os.getenv("RATE_LIMIT_ENABLED", "true").lower() == "true"
+    )
+
+    # Compatibility aliases for Flask-Limiter
     RATELIMIT_STORAGE_URI = RATE_LIMIT_STORAGE_URI
     RATELIMIT_ENABLED = RATE_LIMIT_ENABLED
+
+    # ------------------------------------------------------------------
+    # Security
+    # ------------------------------------------------------------------
     CSRF_ORIGIN_CHECK_ENABLED = True
 
 
@@ -48,14 +73,13 @@ class DevelopmentConfig(BaseConfig):
 
     DEBUG = True
     TESTING = False
+
     SQLALCHEMY_DATABASE_URI = os.getenv(
         "DATABASE_URL",
         "sqlite:///storsight.db",
     )
 
-    # Local HTTP development: Lax is correct for same-site localhost origins.
-    # Angular at :4200 and Flask at :5000 are different ports but same host,
-    # which browsers treat as same-site — so Lax works without SameSite=None.
+    # Local HTTP development.
     SESSION_COOKIE_SAMESITE = "Lax"
     SESSION_COOKIE_SECURE = False
 
@@ -65,17 +89,19 @@ class TestingConfig(BaseConfig):
 
     DEBUG = False
     TESTING = True
+
     SECRET_KEY = "test-only-secret"
+
     SQLALCHEMY_DATABASE_URI = os.getenv(
         "TEST_DATABASE_URL",
         "sqlite:///storsight_test.db",
     )
 
-    # Tests run over plain HTTP with no browser — Lax + not Secure is correct.
     SESSION_COOKIE_SAMESITE = "Lax"
     SESSION_COOKIE_SECURE = False
 
     FRONTEND_ORIGIN = "http://localhost:4200"
+
     RATE_LIMIT_ENABLED = False
     RATELIMIT_ENABLED = False
 
@@ -85,13 +111,11 @@ class ProductionConfig(BaseConfig):
 
     DEBUG = False
     TESTING = False
+
     SECRET_KEY = os.getenv("SECRET_KEY")
     SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL")
 
-    # Production: HTTPS assumed.
-    # Lax is appropriate for a same-site production deployment.
-    # If frontend and API are served from different domains,
-    # set FRONTEND_ORIGIN and consider SameSite=None + Secure.
+    # Production uses HTTPS.
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
     SESSION_COOKIE_SECURE = True
