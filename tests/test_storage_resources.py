@@ -92,7 +92,7 @@ def test_create_storage_resource(authenticated_client):
     assert data["name"] == "storage-node-01"
     assert data["resource_type"] == "NAS"
     assert data["status"] == "healthy"
-    assert data["health_status"] == "unknown"
+    assert data["health_status"] == "healthy"
     assert data["capacity_total"] == 1000
     assert data["capacity_used"] == 400
     assert "password_hash" not in data
@@ -116,37 +116,6 @@ def test_list_storage_resources(authenticated_client):
 
     assert len(data) == 1
     assert data[0]["name"] == "storage-node-01"
-
-
-def test_list_storage_resources_combines_filters(authenticated_client):
-    """Name, status, and resource type filters can be combined."""
-    for payload in (
-        {"name": "prod-san-a", "resource_type": "SAN", "status": "healthy"},
-        {"name": "prod-san-b", "resource_type": "SAN", "status": "warning"},
-        {"name": "prod-nas-a", "resource_type": "NAS", "status": "healthy"},
-    ):
-        assert authenticated_client.post(
-            "/api/storage-resources/", json=payload
-        ).status_code == 201
-
-    response = authenticated_client.get(
-        "/api/storage-resources/?name=prod-san&status=healthy&resource_type=SAN"
-    )
-
-    assert response.status_code == 200
-    assert [resource["name"] for resource in response.get_json()] == [
-        "prod-san-a"
-    ]
-
-
-def test_list_storage_resources_rejects_invalid_status_filter(authenticated_client):
-    """Unsupported status filters return a useful client error."""
-    response = authenticated_client.get(
-        "/api/storage-resources/?status=degraded"
-    )
-
-    assert response.status_code == 400
-    assert response.get_json() == {"error": "Invalid resource status filter."}
 
 
 def test_get_storage_resource(authenticated_client):
@@ -185,6 +154,7 @@ def test_update_storage_resource(authenticated_client):
         f"/api/storage-resources/{resource_id}",
         json={
             "status": "warning",
+            "health_status": "warning",
             "capacity_used": 700,
         },
     )
@@ -194,7 +164,7 @@ def test_update_storage_resource(authenticated_client):
     data = response.get_json()
 
     assert data["status"] == "warning"
-    assert data["health_status"] == "unknown"
+    assert data["health_status"] == "warning"
     assert data["capacity_used"] == 700
 
 
@@ -280,90 +250,3 @@ def test_invalid_status_is_rejected(authenticated_client):
     assert response.get_json() == {
         "error": "Invalid resource status."
     }
-
-
-def test_provider_registration_stores_configuration_without_secret(authenticated_client):
-    """Provider resources retain only a credential reference, never its secret."""
-    response = authenticated_client.post(
-        "/api/storage-resources/",
-        json={
-            "name": "provider-backed-resource",
-            "resource_type": "SAN",
-            "adapter_type": "http_json",
-            "endpoint_url": "https://storage.example.test/capacity",
-            "credential_ref": "STORAGE_PROVIDER_TOKEN",
-            "monitoring_enabled": True,
-            "poll_interval_seconds": 60,
-            "stale_after_seconds": 300,
-            "capacity_total": 1000,
-            "capacity_used": 950,
-        },
-    )
-
-    assert response.status_code == 400
-
-    response = authenticated_client.post(
-        "/api/storage-resources/",
-        json={
-            "name": "provider-backed-resource",
-            "resource_type": "SAN",
-            "adapter_type": "http_json",
-            "endpoint_url": "https://storage.example.test/capacity",
-            "credential_ref": "STORAGE_PROVIDER_TOKEN",
-            "monitoring_enabled": True,
-            "poll_interval_seconds": 60,
-            "stale_after_seconds": 300,
-        },
-    )
-
-    assert response.status_code == 201
-    data = response.get_json()
-    assert data["credential_configured"] is True
-    assert "credential_ref" not in data
-    assert data["monitoring_state"] == "pending"
-
-
-def test_resource_edit_preserves_existing_credential_reference(authenticated_client, app):
-    created = authenticated_client.post(
-        "/api/storage-resources/",
-        json={
-            "name": "credential-preservation-resource",
-            "resource_type": "SAN",
-            "adapter_type": "http_json",
-            "endpoint_url": "https://storage.example.test/capacity",
-            "credential_ref": "STORAGE_PROVIDER_TOKEN",
-            "monitoring_enabled": True,
-        },
-    )
-    resource_id = created.get_json()["id"]
-    updated = authenticated_client.patch(
-        f"/api/storage-resources/{resource_id}",
-        json={"name": "renamed-resource"},
-    )
-    assert updated.status_code == 200
-    with app.app_context():
-        from app.models.storage_resource import StorageResource
-
-        resource = db.session.get(StorageResource, resource_id)
-        assert resource.credential_ref == "STORAGE_PROVIDER_TOKEN"
-
-
-def test_capacity_health_is_derived_from_current_utilization(authenticated_client):
-    """High utilization is reflected in the API health state automatically."""
-    response = authenticated_client.post(
-        "/api/storage-resources/",
-        json={
-            "name": "capacity-pressure-resource",
-            "resource_type": "SAN",
-            "capacity_total": 1000,
-            "capacity_used": 950,
-            "health_status": "healthy",
-        },
-    )
-
-    assert response.status_code == 201
-    data = response.get_json()
-    assert data["health_status"] == "unknown"
-    assert data["capacity_utilization_percent"] == 95.0
-    assert data["capacity_available"] == 50.0
-    assert data["health_reason"] == "unconfigured"

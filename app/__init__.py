@@ -60,7 +60,6 @@ def _validate_production_config(app: Flask) -> None:
         "SECRET_KEY": app.config.get("SECRET_KEY"),
         "DATABASE_URL": app.config.get("SQLALCHEMY_DATABASE_URI"),
         "FRONTEND_ORIGIN": app.config.get("FRONTEND_ORIGIN"),
-        "MAIL_HOST": app.config.get("MAIL_HOST"),
         "MAIL_FROM": app.config.get("MAIL_FROM"),
     }
     missing = [name for name, value in required.items() if not value]
@@ -82,11 +81,24 @@ def _validate_production_config(app: Flask) -> None:
     if urlparse(frontend_origin).scheme != "https":
         raise RuntimeError("Production FRONTEND_ORIGIN must use HTTPS.")
 
-    username = app.config.get("MAIL_USERNAME")
-    password = app.config.get("MAIL_PASSWORD")
-    if bool(username) != bool(password):
+    mail_provider = app.config.get("MAIL_PROVIDER", "api").lower()
+    if mail_provider == "api":
+        if not app.config.get("MAIL_API_KEY"):
+            raise RuntimeError("MAIL_API_KEY must be configured for API email.")
+        if not app.config.get("MAIL_API_URL"):
+            raise RuntimeError("MAIL_API_URL must be configured for API email.")
+    elif mail_provider == "smtp":
+        if not app.config.get("MAIL_HOST"):
+            raise RuntimeError("MAIL_HOST must be configured for SMTP email.")
+        username = app.config.get("MAIL_USERNAME")
+        password = app.config.get("MAIL_PASSWORD")
+        if bool(username) != bool(password):
+            raise RuntimeError(
+                "MAIL_USERNAME and MAIL_PASSWORD must be configured together."
+            )
+    else:
         raise RuntimeError(
-            "MAIL_USERNAME and MAIL_PASSWORD must be configured together."
+            "MAIL_PROVIDER must be either 'api' or 'smtp'."
         )
 
     if not app.config.get("SESSION_COOKIE_SECURE"):

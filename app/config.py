@@ -49,8 +49,9 @@ class BaseConfig:
     STORAGE_MAX_RETRIES = int(os.getenv("STORAGE_MAX_RETRIES", "2"))
 
     # ------------------------------------------------------------------
-    # Email / SMTP
+    # Transactional email
     # ------------------------------------------------------------------
+    MAIL_PROVIDER = os.getenv("MAIL_PROVIDER", "api").lower()
     MAIL_HOST = os.getenv("MAIL_HOST")
     MAIL_PORT = int(os.getenv("MAIL_PORT", "587"))
     MAIL_USERNAME = os.getenv("MAIL_USERNAME")
@@ -62,6 +63,11 @@ class BaseConfig:
     MAIL_USE_TLS = (
         os.getenv("MAIL_USE_TLS", "true").lower() == "true"
     )
+    MAIL_API_URL = os.getenv(
+        "MAIL_API_URL",
+        "https://api.resend.com/emails",
+    )
+    MAIL_API_KEY = os.getenv("MAIL_API_KEY")
 
     # ------------------------------------------------------------------
     # Rate limiting

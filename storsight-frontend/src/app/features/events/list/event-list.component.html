@@ -1,9 +1,6 @@
 <ss-page-header
   title="Events"
   subtitle="Infrastructure event log">
-  <button class="btn btn--ghost" type="button" (click)="refresh()" [disabled]="refreshBusy()" aria-label="Refresh events">
-    {{ refreshBusy() ? 'Refreshing…' : 'Refresh' }}
-  </button>
 </ss-page-header>
 
 <!-- Filter bar -->
@@ -60,6 +57,13 @@
     </button>
   }
 </div>
+
+<!-- Filter note: mutually exclusive server-side filters -->
+@if (resourceFilter() !== null && severityFilter()) {
+  <p class="filter-note" role="status">
+    Note: resource and severity filters are applied independently.
+  </p>
+}
 
 <!-- Loading -->
 @if (resourceError()) {
@@ -121,9 +125,7 @@
               [class.event-row--error]="e.severity === 'error'"
               (click)="navigateTo(e.id)"
               (keydown.enter)="navigateTo(e.id)"
-              (keydown.space)="$event.preventDefault(); navigateTo(e.id)"
               tabindex="0"
-              role="link"
               [attr.aria-label]="e.event_type + ', ' + e.severity">
               <td class="event-row__severity">
                 <ss-severity-badge [severity]="e.severity"></ss-severity-badge>
@@ -154,13 +156,9 @@
 
     <div class="table-footer">
       <span class="table-footer__count">
-        {{ pagination().total }} {{ pagination().total === 1 ? 'event' : 'events' }}
+        {{ filtered().length }} {{ filtered().length === 1 ? 'event' : 'events' }}
+        @if (hasActiveFilters()) { (filtered) }
       </span>
-      <div class="pagination-controls" aria-label="Event pagination">
-        <button class="btn btn--ghost btn--sm" type="button" (click)="goToPage(pagination().page - 1)" [disabled]="pagination().page <= 1">Previous</button>
-        <span>Page {{ pagination().page }} of {{ pagination().total_pages || 1 }}</span>
-        <button class="btn btn--ghost btn--sm" type="button" (click)="goToPage(pagination().page + 1)" [disabled]="pagination().page >= pagination().total_pages">Next</button>
-      </div>
     </div>
   </div>
 }

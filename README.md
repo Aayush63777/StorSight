@@ -225,7 +225,9 @@ The frontend runs at `http://localhost:4200`.
 
 The backend is deployable as a WSGI application through `wsgi.py` and the
 included `Procfile`. Use a managed PostgreSQL database, HTTPS, and a managed
-SMTP provider in production. Do not run Flask's development server publicly.
+ Use a transactional email provider in production. The application supports
+ HTTPS email APIs (recommended on free web hosts) and SMTP where outbound
+ SMTP is permitted. Do not run Flask's development server publicly.
 
 ### Backend (Render or another Gunicorn host)
 
@@ -237,7 +239,8 @@ SMTP provider in production. Do not run Flask's development server publicly.
     - `FRONTEND_ORIGIN=https://<your-frontend-domain>`
     - `SESSION_COOKIE_SECURE=true`
     - `RATE_LIMIT_STORAGE_URI` using Redis for multi-instance deployments
-    - SMTP variables: `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM`, `MAIL_USE_TLS`
+    - Email API variables: `MAIL_PROVIDER=api`, `MAIL_API_URL`, `MAIL_API_KEY`, `MAIL_FROM`
+    - Or SMTP variables when supported: `MAIL_PROVIDER=smtp`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM`, `MAIL_USE_TLS`
 
 2. Deploy with the included start command:
 
@@ -297,16 +300,16 @@ Publish `dist/storsight-frontend/browser` and configure SPA fallback to
 - Confirm the worker process is running and that monitored resources expose
     `monitoring_state=online`, `last_seen`, and `last_metric_at`. An
     `unconfigured`, `stale`, or `error` state is not healthy telemetry.
-- Configure the email provider with valid SMTP credentials and verify the
-    sender domain. Publish the provider's SPF and DKIM records, then publish a
+- Configure the email provider with valid API credentials or SMTP credentials
+    and verify the sender domain. Publish the provider's SPF and DKIM records, then publish a
     DMARC record (start with `p=none` monitoring and enforce it after observing
     reports).
-- Store `SECRET_KEY`, `DATABASE_URL`, SMTP credentials, and
+- Store `SECRET_KEY`, `DATABASE_URL`, email provider credentials, and
     `RATE_LIMIT_STORAGE_URI` only in the hosting provider's encrypted secret
     store. Rotate them without committing them to the repository.
 - Confirm HTTPS is active and session cookies have the `Secure` attribute.
 - Confirm login rate limiting uses shared Redis storage when scaled out.
-- Confirm SMTP reset emails are delivered without logging reset URLs.
+- Confirm password reset emails are delivered without logging reset URLs.
 - Confirm the default/bootstrap admin password has been rotated.
 
 ---

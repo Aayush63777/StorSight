@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
-import { forkJoin, of } from 'rxjs';
+import { forkJoin, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
 import { StorageResourceService } from '../../core/services/storage-resource.service';
@@ -81,8 +81,6 @@ export class DashboardComponent implements OnInit {
     this.allIncidents().filter(i => i.severity === 'critical' && i.status !== 'resolved').length
   );
 
-  attentionCount = computed(() => this.activeAlerts() + this.criticalIncidents());
-
   // ── Resource health distribution ─────────────────────────
   resourcesByStatus = computed(() => {
     const r = this.allResources();
@@ -139,11 +137,11 @@ export class DashboardComponent implements OnInit {
     this.error.set(null);
 
     forkJoin({
-      resources: this.resources.list().pipe(catchError(() => of([]))),
-      alerts:    this.alertSvc.list().pipe(catchError(() => of([]))),
-      incidents: this.incidentSvc.list().pipe(catchError(() => of([]))),
-      events:    this.eventSvc.list().pipe(catchError(() => of([]))),
-      auditLogs: this.auditSvc.list().pipe(catchError(() => of([]))),
+      resources: this.resources.list().pipe(catchError(error => throwError(() => error))),
+      alerts:    this.alertSvc.list().pipe(catchError(error => throwError(() => error))),
+      incidents: this.incidentSvc.list().pipe(catchError(error => throwError(() => error))),
+      events:    this.eventSvc.list().pipe(catchError(error => throwError(() => error))),
+      auditLogs: this.auditSvc.list().pipe(catchError(error => throwError(() => error))),
     }).subscribe({
       next: (data: DashboardData) => {
         this.allResources.set(data.resources);

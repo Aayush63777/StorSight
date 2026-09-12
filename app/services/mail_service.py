@@ -1,18 +1,20 @@
 """Minimal SMTP email adapter for authentication messages."""
 
 from email.message import EmailMessage
+import json
 import smtplib
+from urllib.request import Request, urlopen
 
 from flask import current_app
 
 
 class MailService:
-    """Send transactional authentication email through configured SMTP."""
+    """Send transactional authentication email through a configured provider."""
 
     def send_password_reset(self, recipient: str, reset_url: str) -> None:
-        host = current_app.config.get("MAIL_HOST")
         sender = current_app.config.get("MAIL_FROM")
-        if not host or not sender:
+        provider = current_app.config.get("MAIL_PROVIDER", "api").lower()
+        if not sender:
             raise RuntimeError("Transactional email is not configured.")
 
         message = EmailMessage()
@@ -25,6 +27,48 @@ class MailService:
             f"minutes:\n{reset_url}\n\n"
             "If you did not request this, you can ignore this email."
         )
+
+        if provider == "api":
+            self._send_via_api(message)
+            return
+        if provider != "smtp":
+            raise RuntimeError(f"Unsupported mail provider: {provider}")
+
+        self._send_via_smtp(message)
+
+    def _send_via_api(self, message: EmailMessage) -> None:
+        api_url = current_app.config.get("MAIL_API_URL")
+        api_key = current_app.config.get("MAIL_API_KEY")
+        if not api_url or not api_key:
+            raise RuntimeError("Transactional email API is not configured.")
+
+        payload = json.dumps(
+            {
+                "from": message["From"],
+                "to": [message["To"]],
+                "subject": message["Subject"],
+                "text": message.get_content(),
+            }
+        ).encode("utf-8")
+        request = Request(
+            api_url,
+            data=payload,
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            },
+            method="POST",
+        )
+        with urlopen(request, timeout=10) as response:
+            if response.status < 200 or response.status >= 300:
+                raise RuntimeError(
+                    f"Transactional email API returned HTTP {response.status}."
+                )
+
+    def _send_via_smtp(self, message: EmailMessage) -> None:
+        host = current_app.config.get("MAIL_HOST")
+        if not host:
+            raise RuntimeError("SMTP email is not configured.")
 
         port = current_app.config["MAIL_PORT"]
         username = current_app.config.get("MAIL_USERNAME")

@@ -16,7 +16,7 @@ import { debounceTime, distinctUntilChanged, takeUntil, catchError } from 'rxjs/
 
 import { MetricService } from '../../../core/services/metric.service';
 import { StorageResourceService } from '../../../core/services/storage-resource.service';
-import { Metric, MetricPage, StorageResource } from '../../../core/models';
+import { Metric, StorageResource } from '../../../core/models';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner/loading-spinner.component';
@@ -53,9 +53,6 @@ export class MetricsListComponent implements OnInit, OnDestroy {
   error           = signal<string | null>(null);
   resourceError   = signal<string | null>(null);
   metrics         = signal<Metric[]>([]);
-  pagination      = signal<MetricPage['pagination']>({ page: 1, page_size: 50, total: 0, total_pages: 0 });
-  timeRange       = signal('24h');
-  refreshBusy     = signal(false);
   resources       = signal<StorageResource[]>([]);
 
   // ── Filter state ───────────────────────────────────────────
@@ -64,19 +61,8 @@ export class MetricsListComponent implements OnInit, OnDestroy {
   metricNameFilter = signal('');
 
   hasActiveFilters = computed(() =>
-    this.resourceFilter() !== null || this.metricNameFilter().trim() !== '' || this.timeRange() !== '24h',
+    this.resourceFilter() !== null || this.metricNameFilter().trim() !== '',
   );
-
-  emptyReason = computed(() => {
-    const selected = this.resourceFilter() === null
-      ? this.resources()
-      : this.resources().filter(r => r.id === this.resourceFilter());
-    if (selected.some(r => r.monitoring_state === 'error')) return 'provider_failure';
-    if (selected.some(r => r.monitoring_state === 'stale')) return 'stale';
-    if (selected.length > 0 && selected.every(r => !r.monitoring_enabled || r.monitoring_state === 'unconfigured')) return 'unconfigured';
-    if (this.hasActiveFilters()) return 'filtered';
-    return 'no_telemetry';
-  });
 
   /** Lookup map: resource_id → resource name */
   resourceMap = computed(() => {
@@ -88,31 +74,6 @@ export class MetricsListComponent implements OnInit, OnDestroy {
   resourceName(id: number): string {
     return this.resourceMap().get(id) ?? `Resource ${id}`;
   }
-
-  trendMetric = computed(() => {
-    const metrics = this.metrics();
-    const selected = this.metricNameFilter().trim().toLowerCase();
-    if (selected) return selected;
-    return metrics.length ? metrics[0].metric_name : null;
-  });
-
-  trendPoints = computed(() => {
-    const name = this.trendMetric();
-    if (!name) return [] as Array<{ value: number; height: number; recorded_at: string }>;
-    const points = this.metrics()
-      .filter(metric => metric.metric_name.toLowerCase() === name)
-      .slice()
-      .reverse();
-    const values = points.map(point => point.metric_value);
-    const min = Math.min(...values);
-    const max = Math.max(...values);
-    const range = max - min || 1;
-    return points.map(point => ({
-      value: point.metric_value,
-      height: 12 + ((point.metric_value - min) / range) * 88,
-      recorded_at: point.recorded_at,
-    }));
-  });
 
   // Debounce stream for metric name filter (triggers an API call)
   private readonly nameInput$ = new Subject<string>();
@@ -171,7 +132,6 @@ export class MetricsListComponent implements OnInit, OnDestroy {
   clearFilters(): void {
     this.resourceFilter.set(null);
     this.metricNameFilter.set('');
-    this.timeRange.set('24h');
     this.nameInput$.next('');
     this.loadMetrics();
   }
@@ -180,15 +140,12 @@ export class MetricsListComponent implements OnInit, OnDestroy {
     this.loading.set(true);
     this.error.set(null);
 
-    const rangeHours: Record<string, number> = { '15m': 0.25, '1h': 1, '6h': 6, '24h': 24, '7d': 168 };
-    const from = new Date(Date.now() - rangeHours[this.timeRange()] * 3600_000).toISOString();
-    const resource_id = this.resourceFilter() ?? undefined;
-    const metric_name = this.metricNameFilter().trim() || undefined;
+    const resource_id   = this.resourceFilter() ?? undefined;
+    const metric_name   = this.metricNameFilter().trim() || undefined;
 
-    this.metricSvc.page({ resource_id, metric_name, page: this.pagination().page, page_size: 50, from }).subscribe({
-      next: (result) => {
-        this.metrics.set(result.items);
-        this.pagination.set(result.pagination);
+    this.metricSvc.list({ resource_id, metric_name }).subscribe({
+      next: (list) => {
+        this.metrics.set(list);
         this.loading.set(false);
         this.cdr.markForCheck();
       },
@@ -198,26 +155,6 @@ export class MetricsListComponent implements OnInit, OnDestroy {
         this.cdr.markForCheck();
       },
     });
-  }
-
-  onTimeRangeChange(value: string): void {
-    this.timeRange.set(value);
-    this.pagination.update(p => ({ ...p, page: 1 }));
-    this.loadMetrics();
-  }
-
-  goToPage(page: number): void {
-    if (page < 1 || page > this.pagination().total_pages) return;
-    this.pagination.update(p => ({ ...p, page }));
-    this.loadMetrics();
-  }
-
-  refresh(): void {
-    if (this.refreshBusy()) return;
-    this.refreshBusy.set(true);
-    this.loadResources();
-    this.loadMetrics();
-    setTimeout(() => this.refreshBusy.set(false), 300);
   }
 
   navigateTo(id: number): void {

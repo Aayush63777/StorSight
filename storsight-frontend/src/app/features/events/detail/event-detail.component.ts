@@ -1,7 +1,6 @@
 import {
   Component,
   OnInit,
-  OnDestroy,
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   inject,
@@ -10,7 +9,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
-import { of, Subscription } from 'rxjs';
+import { of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
 import { EventService } from '../../../core/services/event.service';
@@ -38,7 +37,7 @@ import { RelativeTimePipe } from '../../../shared/pipes/relative-time.pipe';
   templateUrl: './event-detail.component.html',
   styleUrl:    './event-detail.component.scss',
 })
-export class EventDetailComponent implements OnInit, OnDestroy {
+export class EventDetailComponent implements OnInit {
   private readonly route       = inject(ActivatedRoute);
   private readonly eventSvc    = inject(EventService);
   private readonly resourceSvc = inject(StorageResourceService);
@@ -49,58 +48,30 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   resourceError = signal<string | null>(null);
   event    = signal<InfraEvent | null>(null);
   resource = signal<StorageResource | null>(null);
-  private eventSubscription?: Subscription;
-  private resourceSubscription?: Subscription;
-  private routeSubscription?: Subscription;
 
   ngOnInit(): void {
-    if (this.route.paramMap) {
-      this.routeSubscription = this.route.paramMap.subscribe(params => {
-        this.loadRouteId(Number(params.get('id')));
-      });
-      return;
-    }
-
-    this.loadRouteId(Number(this.route.snapshot.paramMap.get('id')));
-  }
-
-  ngOnDestroy(): void {
-    this.routeSubscription?.unsubscribe();
-    this.eventSubscription?.unsubscribe();
-    this.resourceSubscription?.unsubscribe();
-  }
-
-  private loadRouteId(id: number): void {
-    this.eventSubscription?.unsubscribe();
-    this.resourceSubscription?.unsubscribe();
-    this.event.set(null);
-    this.resource.set(null);
-    this.error.set(null);
-    this.resourceError.set(null);
-
+    const id = Number(this.route.snapshot.paramMap.get('id'));
     if (isNaN(id) || id <= 0) {
       this.error.set('Invalid event ID.');
       this.loading.set(false);
       return;
     }
-    this.loading.set(true);
     this.loadEvent(id);
   }
 
   private loadEvent(id: number): void {
-    this.eventSubscription = this.eventSvc.get(id).subscribe({
+    this.eventSvc.get(id).subscribe({
       next: (e) => {
         this.event.set(e);
-        this.loading.set(false);
-        this.cdr.markForCheck();
         // Fetch the associated resource; suppress errors — ID shown as fallback
-        this.resourceSubscription = this.resourceSvc.get(e.resource_id).pipe(
+        this.resourceSvc.get(e.resource_id).pipe(
           catchError(() => {
             this.resourceError.set('Storage resource details are unavailable.');
             return of(null);
           }),
         ).subscribe(r => {
           this.resource.set(r);
+          this.loading.set(false);
           this.cdr.markForCheck();
         });
       },
