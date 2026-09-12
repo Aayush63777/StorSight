@@ -1,3 +1,13 @@
+.metric-trend { margin-bottom: 1rem; padding: 1.25rem; }
+.metric-trend__header { align-items: center; display: flex; justify-content: space-between; margin-bottom: 1rem; }
+.metric-trend__header h2 { font-size: 1rem; margin: .35rem 0 0; text-transform: capitalize; }
+.metric-trend__count { color: var(--color-text-muted); font-size: .75rem; }
+.metric-trend__bars { align-items: flex-end; display: flex; gap: .35rem; height: 7rem; }
+.metric-trend__bar { background: linear-gradient(180deg, var(--color-primary), rgba(88,166,255,.25)); border-radius: 3px 3px 0 0; flex: 1; min-width: 3px; transition: height .2s ease; }
+.metric-context { align-items: center; border-top: 1px solid var(--color-border); color: var(--color-text-muted); display: flex; flex-wrap: wrap; gap: .75rem 1.25rem; justify-content: center; margin: 1rem 1.5rem 0; padding-top: 1rem; text-align: center; }
+.metric-context strong { color: var(--color-text); }
+.metric-context__error { color: var(--color-danger, #f87171); flex-basis: 100%; }
+.pagination-controls { align-items: center; display: flex; gap: .75rem; }
 .filter-bar {
   display: flex;
   gap: var(--space-3);

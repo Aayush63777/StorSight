@@ -1,6 +1,7 @@
 """StorSight Flask application package."""
 
 import logging
+from urllib.parse import urlparse
 
 from flask import Flask, jsonify, request
 
@@ -40,11 +41,7 @@ def create_app(config_name: str = "development") -> Flask:
     app.config.from_object(config_class)
 
     if config_name == "production":
-        secret_key = app.config.get("SECRET_KEY")
-        if not secret_key or len(secret_key) < 32:
-            raise RuntimeError(
-                "Production SECRET_KEY must be configured and at least 32 characters."
-            )
+        _validate_production_config(app)
 
     _init_extensions(app)
     _configure_logging(app)
@@ -56,6 +53,52 @@ def create_app(config_name: str = "development") -> Flask:
     return app
 
 
+def _validate_production_config(app: Flask) -> None:
+    """Fail fast when a production deployment is missing required services."""
+
+    required = {
+        "SECRET_KEY": app.config.get("SECRET_KEY"),
+        "DATABASE_URL": app.config.get("SQLALCHEMY_DATABASE_URI"),
+        "FRONTEND_ORIGIN": app.config.get("FRONTEND_ORIGIN"),
+        "MAIL_HOST": app.config.get("MAIL_HOST"),
+        "MAIL_FROM": app.config.get("MAIL_FROM"),
+    }
+    missing = [name for name, value in required.items() if not value]
+    if missing:
+        raise RuntimeError(
+            "Production configuration is missing: " + ", ".join(missing)
+        )
+
+    if len(required["SECRET_KEY"]) < 32:
+        raise RuntimeError(
+            "Production SECRET_KEY must be configured and at least 32 characters."
+        )
+
+    database_url = required["DATABASE_URL"]
+    if not database_url.startswith(("postgresql://", "postgresql+")):
+        raise RuntimeError("Production DATABASE_URL must use PostgreSQL.")
+
+    frontend_origin = required["FRONTEND_ORIGIN"]
+    if urlparse(frontend_origin).scheme != "https":
+        raise RuntimeError("Production FRONTEND_ORIGIN must use HTTPS.")
+
+    username = app.config.get("MAIL_USERNAME")
+    password = app.config.get("MAIL_PASSWORD")
+    if bool(username) != bool(password):
+        raise RuntimeError(
+            "MAIL_USERNAME and MAIL_PASSWORD must be configured together."
+        )
+
+    if not app.config.get("SESSION_COOKIE_SECURE"):
+        raise RuntimeError("Production sessions must use secure cookies.")
+
+    rate_limit_uri = app.config.get("RATE_LIMIT_STORAGE_URI", "memory://")
+    if not rate_limit_uri.startswith(("redis://", "rediss://")):
+        raise RuntimeError(
+            "Production RATE_LIMIT_STORAGE_URI must use Redis."
+        )
+
+
 def _init_extensions(app: Flask) -> None:
     """Initialise Flask extensions."""
 
@@ -63,15 +106,15 @@ def _init_extensions(app: Flask) -> None:
     migrate.init_app(app, db)
     limiter.init_app(app)
 
-    frontend_origin = app.config.get("FRONTEND_ORIGIN", "http://localhost:4200")
+    frontend_origins = _allowed_frontend_origins(app)
 
     # Only configure CORS when a non-empty origin is provided.
     # SameSite=Lax + same-host localhost works without SameSite=None,
     # so we enable credentials unconditionally for allowed origins.
-    if frontend_origin:
+    if frontend_origins:
         cors.init_app(
             app,
-            resources={r"/api/*": {"origins": frontend_origin}},
+            resources={r"/api/*": {"origins": frontend_origins}},
             supports_credentials=True,
             allow_headers=["Content-Type", "Accept"],
             methods=["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
@@ -152,7 +195,21 @@ def _register_csrf_origin_check(app: Flask) -> None:
             return None
 
         origin = request.headers.get("Origin")
-        allowed_origin = app.config.get("FRONTEND_ORIGIN")
-        if origin and origin != allowed_origin:
+        if origin and origin not in _allowed_frontend_origins(app):
             return jsonify({"error": "Cross-origin request rejected"}), 403
         return None
+
+
+def _allowed_frontend_origins(app: Flask) -> list[str]:
+    """Return browser origins permitted to call the API."""
+
+    primary_origin = app.config.get("FRONTEND_ORIGIN", "").rstrip("/")
+    origins = [primary_origin] if primary_origin else []
+
+    # Angular may be opened through either localhost or its loopback IP in
+    # local development.  The production configuration supplies its deployed
+    # URL instead, so this special case cannot broaden a production origin.
+    if primary_origin == "http://localhost:4200":
+        origins.append("http://127.0.0.1:4200")
+
+    return origins

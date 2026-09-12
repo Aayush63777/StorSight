@@ -17,7 +17,7 @@ import { ErrorBannerComponent } from '../../../shared/components/error-banner/er
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner/loading-spinner.component';
 
 const ALLOWED_STATUSES        = ['healthy', 'warning', 'critical', 'offline'] as const;
-const ALLOWED_HEALTH_STATUSES = ['healthy', 'warning', 'critical', 'unknown'] as const;
+const ADAPTER_TYPES           = ['manual', 'http_json'] as const;
 
 /** Cross-field validator: used ≤ total when both are provided. */
 function capacityValidator(group: AbstractControl): ValidationErrors | null {
@@ -48,23 +48,28 @@ export class StorageResourceFormComponent implements OnInit {
   private readonly fb     = inject(FormBuilder);
   private readonly cdr    = inject(ChangeDetectorRef);
 
-  readonly statuses       = ALLOWED_STATUSES;
-  readonly healthStatuses = ALLOWED_HEALTH_STATUSES;
+  readonly statuses = ALLOWED_STATUSES;
+  readonly adapterTypes = ADAPTER_TYPES;
 
-  isEditMode  = signal(false);
-  resourceId  = signal<number | null>(null);
-  loading     = signal(false);   // loading existing resource in edit
-  saving      = signal(false);
-  apiError    = signal<string | null>(null);
+  isEditMode = signal(false);
+  resourceId = signal<number | null>(null);
+  loading = signal(false);
+  saving = signal(false);
+  apiError = signal<string | null>(null);
 
   form = this.fb.group(
     {
-      name:           ['', [Validators.required, Validators.maxLength(150)]],
-      resource_type:  ['', [Validators.required, Validators.maxLength(50)]],
-      status:         ['healthy', [Validators.required]],
-      health_status:  ['healthy', [Validators.required]],
+      name: ['', [Validators.required, Validators.maxLength(150)]],
+      resource_type: ['', [Validators.required, Validators.maxLength(50)]],
+      adapter_type: ['manual', [Validators.required]],
+      endpoint_url: [''],
+      credential_ref: [''],
+      monitoring_enabled: [false],
+      poll_interval_seconds: [300, [Validators.min(15), Validators.max(86400)]],
+      stale_after_seconds: [900, [Validators.min(15), Validators.max(604800)]],
+      status: ['healthy', [Validators.required]],
       capacity_total: [null as number | null, [Validators.min(0)]],
-      capacity_used:  [null as number | null, [Validators.min(0)]],
+      capacity_used: [null as number | null, [Validators.min(0)]],
     },
     { validators: capacityValidator },
   );
@@ -100,8 +105,13 @@ export class StorageResourceFormComponent implements OnInit {
         this.form.patchValue({
           name:           r.name,
           resource_type:  r.resource_type,
+          adapter_type:   r.adapter_type ?? 'manual',
+          endpoint_url:   r.endpoint_url ?? '',
+          credential_ref: '',
+          monitoring_enabled: r.monitoring_enabled ?? false,
+          poll_interval_seconds: r.poll_interval_seconds ?? 300,
+          stale_after_seconds: r.stale_after_seconds ?? 900,
           status:         r.status,
-          health_status:  r.health_status,
           capacity_total: r.capacity_total,
           capacity_used:  r.capacity_used,
         });
@@ -129,11 +139,21 @@ export class StorageResourceFormComponent implements OnInit {
     const payload: Partial<import('../../../core/models').StorageResource> = {
       name:           raw.name!.trim(),
       resource_type:  raw.resource_type!.trim(),
+      adapter_type:   raw.adapter_type as 'manual' | 'http_json',
+      endpoint_url:   raw.endpoint_url?.trim() || null,
+      monitoring_enabled: !!raw.monitoring_enabled,
+      poll_interval_seconds: Number(raw.poll_interval_seconds),
+      stale_after_seconds: Number(raw.stale_after_seconds),
       status:         raw.status as 'healthy' | 'warning' | 'critical' | 'offline',
-      health_status:  raw.health_status as 'healthy' | 'warning' | 'critical' | 'unknown',
-      capacity_total: raw.capacity_total !== null && raw.capacity_total !== undefined && raw.capacity_total !== ('' as unknown) ? Number(raw.capacity_total) : null,
-      capacity_used:  raw.capacity_used  !== null && raw.capacity_used  !== undefined && raw.capacity_used  !== ('' as unknown) ? Number(raw.capacity_used)  : null,
     };
+    if (raw.adapter_type === 'manual') {
+      payload.capacity_total = raw.capacity_total !== null && raw.capacity_total !== undefined && raw.capacity_total !== ('' as unknown) ? Number(raw.capacity_total) : null;
+      payload.capacity_used = raw.capacity_used !== null && raw.capacity_used !== undefined && raw.capacity_used !== ('' as unknown) ? Number(raw.capacity_used) : null;
+    }
+    const credentialRef = raw.credential_ref?.trim();
+    if (credentialRef) {
+      payload.credential_ref = credentialRef;
+    }
 
     const request$ = this.isEditMode()
       ? this.svc.update(this.resourceId()!, payload)
@@ -186,7 +206,10 @@ export class StorageResourceFormComponent implements OnInit {
   private fieldLabel(name: string): string {
     const map: Record<string, string> = {
       name: 'Name', resource_type: 'Resource type',
-      status: 'Status', health_status: 'Health status',
+      adapter_type: 'Adapter', endpoint_url: 'Endpoint URL',
+      credential_ref: 'Credential reference', monitoring_enabled: 'Monitoring',
+      poll_interval_seconds: 'Poll interval', stale_after_seconds: 'Stale threshold',
+      status: 'Status',
       capacity_total: 'Total capacity', capacity_used: 'Used capacity',
     };
     return map[name] ?? name;

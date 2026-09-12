@@ -24,8 +24,8 @@ class AlertService:
     def get_by_id(self, alert_id: int):
         return self.repository.get_by_id(alert_id)
 
-    def list_alerts(self):
-        return self.repository.get_all()
+    def list_alerts(self, limit: int | None = None):
+        return self.repository.get_all(limit=limit)
 
     def list_active(self):
         return self.repository.get_active()

@@ -361,6 +361,14 @@ def test_reset_password_is_single_use_and_revokes_session(
             "password": auth_data["password"],
         },
     )
+    other_session = app.test_client()
+    other_session.post(
+        "/api/auth/login",
+        json={
+            "username": auth_data["username"],
+            "password": auth_data["password"],
+        },
+    )
     response = client.post(
         "/api/auth/forgot-password",
         json={"email": "testuser@storsight.local"},
@@ -374,6 +382,7 @@ def test_reset_password_is_single_use_and_revokes_session(
     )
     assert reset.status_code == 200
     assert client.get("/api/auth/me").status_code == 401
+    assert other_session.get("/api/auth/me").status_code == 401
 
     reused = client.post(
         "/api/auth/reset-password",

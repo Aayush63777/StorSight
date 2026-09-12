@@ -1,9 +1,10 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 import { environment } from '../../../environments/environment';
-import { Metric } from '../models';
+import { Metric, MetricPage } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class MetricService {
@@ -21,10 +22,26 @@ export class MetricService {
     let params = new HttpParams();
     if (filters?.resource_id != null) {
       params = params.set('resource_id', filters.resource_id);
-    } else if (filters?.metric_name) {
+    }
+    if (filters?.metric_name) {
       params = params.set('metric_name', filters.metric_name);
     }
     return this.http.get<Metric[]>(`${this.base}/`, { params });
+  }
+
+  page(filters?: { resource_id?: number; metric_name?: string; page?: number; page_size?: number; from?: string; to?: string }): Observable<MetricPage> {
+    let params = new HttpParams()
+      .set('page', filters?.page ?? 1)
+      .set('page_size', filters?.page_size ?? 50);
+    if (filters?.resource_id != null) params = params.set('resource_id', filters.resource_id);
+    if (filters?.metric_name) params = params.set('metric_name', filters.metric_name);
+    if (filters?.from) params = params.set('from', filters.from);
+    if (filters?.to) params = params.set('to', filters.to);
+    return this.http.get<MetricPage | Metric[]>(`${this.base}/`, { params }).pipe(
+      map(response => Array.isArray(response)
+        ? { items: response, pagination: { page: 1, page_size: response.length, total: response.length, total_pages: response.length ? 1 : 0 } }
+        : response),
+    );
   }
 
   get(id: number): Observable<Metric> {

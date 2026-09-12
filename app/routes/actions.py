@@ -4,7 +4,7 @@ import json
 
 from flask import Blueprint, g, jsonify, request
 
-from app.auth.decorators import login_required
+from app.auth.decorators import login_required, operational_write_required
 from app.services.engineer_action_service import EngineerActionService
 from app.services.incident_service import IncidentService
 
@@ -61,7 +61,7 @@ def list_actions(incident_id):
 
 
 @actions_bp.post("/<int:incident_id>/actions")
-@login_required
+@operational_write_required
 def create_action(incident_id):
     """Record an engineer action against an incident."""
     data = request.get_json(silent=True) or {}

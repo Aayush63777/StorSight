@@ -20,6 +20,7 @@ class Metric(db.Model):
     metric_name = db.Column(db.String(100), nullable=False)
     metric_value = db.Column(db.Float, nullable=False)
     unit = db.Column(db.String(30), nullable=True)
+    source = db.Column(db.String(40), nullable=False, default="manual")
     recorded_at = db.Column(
         db.DateTime(timezone=True),
         nullable=False,

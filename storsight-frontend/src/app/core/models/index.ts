@@ -34,10 +34,28 @@ export interface StorageResource {
   id: number;
   name: string;
   resource_type: string;
+  adapter_type?: 'manual' | 'http_json' | string;
+  endpoint_url?: string | null;
+  credential_ref?: string | null;
+  credential_configured?: boolean;
+  monitoring_enabled?: boolean;
+  poll_interval_seconds?: number;
+  stale_after_seconds?: number;
   status: 'healthy' | 'warning' | 'critical' | 'offline';
   health_status: 'healthy' | 'warning' | 'critical' | 'unknown';
+  health_reason?: string | null;
   capacity_total: number | null;
   capacity_used: number | null;
+  capacity_total_bytes?: number | null;
+  capacity_used_bytes?: number | null;
+  capacity_available?: number | null;
+  capacity_available_bytes?: number | null;
+  capacity_utilization_percent?: number | null;
+  monitoring_state?: string;
+  last_seen?: string | null;
+  last_metric_at?: string | null;
+  connection_tested_at?: string | null;
+  monitoring_error?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -48,7 +66,18 @@ export interface Metric {
   metric_name: string;
   metric_value: number;
   unit: string | null;
+  source?: string;
   recorded_at: string;
+}
+
+export interface MetricPage {
+  items: Metric[];
+  pagination: {
+    page: number;
+    page_size: number;
+    total: number;
+    total_pages: number;
+  };
 }
 
 /** Event severities: info | warning | error | critical */
@@ -59,6 +88,16 @@ export interface Event {
   severity: 'info' | 'warning' | 'error' | 'critical';
   message: string;
   occurred_at: string;
+}
+
+export interface EventPage {
+  items: Event[];
+  pagination: {
+    page: number;
+    page_size: number;
+    total: number;
+    total_pages: number;
+  };
 }
 
 /** Alert severities: info | warning | critical */

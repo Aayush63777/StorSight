@@ -22,9 +22,10 @@ class BaseRepository(Generic[ModelType]):
 
         return db.session.get(self.model, record_id)
 
-    def get_all(self):
+    def get_all(self, limit: int | None = None):
         """Return all records."""
-        return self.model.query.all()
+        query = self.model.query
+        return query.limit(limit).all() if limit else query.all()
 
     def count(self) -> int:
         """Return total number of records."""

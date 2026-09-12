@@ -2,7 +2,7 @@
 
 from flask import Blueprint, g, jsonify, request
 
-from app.auth.decorators import login_required
+from app.auth.decorators import login_required, operational_write_required
 from app.services.incident_service import IncidentService
 
 
@@ -75,7 +75,7 @@ def get_incident(incident_id):
 
 
 @incidents_bp.post("/")
-@login_required
+@operational_write_required
 def create_incident():
     """Create a new incident."""
     data = request.get_json(silent=True) or {}
@@ -94,7 +94,7 @@ def create_incident():
 
 
 @incidents_bp.patch("/<int:incident_id>/resolve")
-@login_required
+@operational_write_required
 def resolve_incident(incident_id):
     """Resolve an incident."""
     try:
@@ -111,7 +111,7 @@ def resolve_incident(incident_id):
 
 
 @incidents_bp.patch("/<int:incident_id>/assign")
-@login_required
+@operational_write_required
 def assign_incident(incident_id):
     """Assign an incident to a user."""
     data = request.get_json(silent=True) or {}

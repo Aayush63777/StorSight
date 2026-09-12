@@ -32,3 +32,12 @@ class StorageResourceRepository(BaseRepository[StorageResource]):
         if resource_type:
             query = query.filter_by(resource_type=resource_type)
         return query.order_by(self.model.name.asc()).all()
+
+    def list_monitoring_enabled(self):
+        """Return resources opted into backend monitoring."""
+        return (
+            self.model.query
+            .filter_by(monitoring_enabled=True)
+            .order_by(self.model.id.asc())
+            .all()
+        )

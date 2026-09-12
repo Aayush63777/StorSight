@@ -147,8 +147,7 @@ export class StorageResourceListComponent implements OnInit, OnDestroy {
 
   /** Safe utilisation percentage clamped 0–100. */
   utilPercent(r: StorageResource): number {
-    if (!r.capacity_total || r.capacity_total <= 0) return 0;
-    return Math.min(100, Math.round(((r.capacity_used ?? 0) / r.capacity_total) * 100));
+    return r.capacity_utilization_percent ?? 0;
   }
 
   /** CSS class for utilisation bar colour. */

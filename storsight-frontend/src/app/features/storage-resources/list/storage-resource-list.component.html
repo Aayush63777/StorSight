@@ -114,6 +114,7 @@
             <th scope="col">Type</th>
             <th scope="col">Status</th>
             <th scope="col">Health</th>
+            <th scope="col">Monitoring</th>
             <th scope="col">Capacity</th>
             <th scope="col">Updated</th>
           </tr>
@@ -138,6 +139,12 @@
               </td>
               <td>
                 <ss-status-badge [status]="r.health_status"></ss-status-badge>
+                @if (r.health_reason && r.health_reason !== 'healthy') {
+                  <span class="health-reason">{{ r.health_reason }}</span>
+                }
+              </td>
+              <td>
+                <span class="monitoring-state">{{ r.monitoring_state ?? 'unconfigured' }}</span>
               </td>
               <td class="resource-row__capacity">
                 @if (r.capacity_total) {
@@ -190,6 +197,8 @@
         </div>
         <div class="resource-card__meta">
           <div><span>Health</span><ss-status-badge [status]="r.health_status"></ss-status-badge></div>
+          <div><span>Monitoring</span><strong>{{ r.monitoring_state ?? 'unconfigured' }}</strong></div>
+          <div><span>Last seen</span><strong>{{ r.last_seen ? (r.last_seen | relativeTime) : 'Never' }}</strong></div>
           <div><span>Capacity</span><strong>{{ r.capacity_total ? formatCapacity(r.capacity_used) + ' / ' + formatCapacity(r.capacity_total) : 'Not reported' }}</strong></div>
           <div><span>Updated</span><strong>{{ r.updated_at | relativeTime }}</strong></div>
         </div>

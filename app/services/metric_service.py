@@ -17,17 +17,20 @@ class MetricService:
     def get_by_id(self, metric_id: int):
         return self.repository.get_by_id(metric_id)
 
-    def list_metrics(self):
-        return self.repository.get_all()
+    def list_metrics(self, limit: int | None = None):
+        return self.repository.get_all(limit=limit)
 
-    def list_by_resource(self, resource_id: int):
-        return self.repository.get_by_resource_id(resource_id)
+    def list_by_resource(self, resource_id: int, limit: int | None = None):
+        return self.repository.get_by_resource_id(resource_id, limit=limit)
 
-    def list_by_name(self, metric_name: str):
+    def list_by_name(self, metric_name: str, limit: int | None = None):
         if not metric_name or not metric_name.strip():
             raise ValueError("Metric name is required.")
 
-        return self.repository.get_by_name(metric_name.strip())
+        return self.repository.get_by_name(metric_name.strip(), limit=limit)
+
+    def page(self, **filters):
+        return self.repository.page(**filters)
 
     def record_metric(
         self,
@@ -48,6 +51,7 @@ class MetricService:
             metric_name=metric_name,
             metric_value=metric_value,
             unit=unit.strip() if unit else None,
+            source="manual",
         )
 
         self.repository.add(metric)

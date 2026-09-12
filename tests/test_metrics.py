@@ -205,6 +205,36 @@ def test_filter_metrics_by_name(client, metric_data):
     assert data[0]["metric_name"] == "iops"
 
 
+def test_paginated_metrics_include_metadata_and_time_filter(client, metric_data):
+    login(client, metric_data)
+    client.post("/api/metrics/", json={
+        "resource_id": metric_data["resource_id"],
+        "metric_name": "capacity_utilization_percent",
+        "metric_value": 85,
+        "unit": "percent",
+    })
+
+    response = client.get(
+        "/api/metrics/?page=1&page_size=1&metric_name=capacity&from=2026-01-01T00:00:00%2B00:00"
+    )
+    assert response.status_code == 200
+    data = response.get_json()
+    assert len(data["items"]) == 1
+    assert data["pagination"] == {
+        "page": 1,
+        "page_size": 1,
+        "total": 1,
+        "total_pages": 1,
+    }
+    assert data["items"][0]["source"] == "manual"
+
+
+def test_paginated_metrics_reject_invalid_parameters(client, metric_data):
+    login(client, metric_data)
+    response = client.get("/api/metrics/?page=0&page_size=9999")
+    assert response.status_code == 400
+
+
 def test_metric_requires_existing_resource(client, metric_data):
     """Verify metrics cannot reference a missing storage resource."""
     login(client, metric_data)

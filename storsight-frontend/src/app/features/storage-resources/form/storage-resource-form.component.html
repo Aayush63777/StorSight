@@ -49,63 +49,96 @@
         }
       </div>
 
-      <!-- Status + Health row -->
+      <div class="form-group">
+        <label for="sr-adapter">Monitoring adapter <span class="required-mark" aria-hidden="true">*</span></label>
+        <select id="sr-adapter" class="form-control" formControlName="adapter_type" aria-required="true">
+          @for (adapter of adapterTypes; track adapter) {
+            <option [value]="adapter">{{ adapter === 'http_json' ? 'HTTP JSON provider' : 'Manual / not connected' }}</option>
+          }
+        </select>
+        <span class="form-help">Live capacity requires a supported provider endpoint. Manual resources remain unmonitored.</span>
+      </div>
+
+      @if (form.get('adapter_type')?.value === 'http_json') {
+        <div class="form-group">
+          <label for="sr-endpoint">Provider endpoint <span class="required-mark" aria-hidden="true">*</span></label>
+          <input id="sr-endpoint" type="url" class="form-control" formControlName="endpoint_url" placeholder="https://storage.example.com/capacity" autocomplete="off" />
+        </div>
+        <div class="form-group">
+          <label for="sr-credential">Credential environment reference</label>
+          <input id="sr-credential" type="text" class="form-control" formControlName="credential_ref" placeholder="STORAGE_PROD_TOKEN" autocomplete="off" />
+          <span class="form-help">Only the environment variable name is stored. The secret never enters the browser or database.</span>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="sr-poll">Poll interval (seconds)</label>
+            <input id="sr-poll" type="number" class="form-control" formControlName="poll_interval_seconds" min="15" max="86400" />
+          </div>
+          <div class="form-group">
+            <label for="sr-stale">Stale after (seconds)</label>
+            <input id="sr-stale" type="number" class="form-control" formControlName="stale_after_seconds" min="15" max="604800" />
+          </div>
+        </div>
+        <label class="checkbox-field">
+          <input type="checkbox" formControlName="monitoring_enabled" />
+          <span>Enable backend monitoring</span>
+        </label>
+      }
+
+      <!-- Operational state is explicit; health is derived from live signals. -->
       <div class="form-row">
         <div class="form-group">
-          <label for="sr-status">Status <span class="required-mark" aria-hidden="true">*</span></label>
+          <label for="sr-status">Operational status <span class="required-mark" aria-hidden="true">*</span></label>
           <select id="sr-status" class="form-control" formControlName="status" aria-required="true">
             @for (s of statuses; track s) {
               <option [value]="s">{{ s }}</option>
             }
           </select>
         </div>
+      </div>
 
-        <div class="form-group">
-          <label for="sr-health">Health status <span class="required-mark" aria-hidden="true">*</span></label>
-          <select id="sr-health" class="form-control" formControlName="health_status" aria-required="true">
-            @for (h of healthStatuses; track h) {
-              <option [value]="h">{{ h }}</option>
+      <p class="form-help">Health is calculated automatically from collected telemetry and operational signals.</p>
+
+      @if (form.get('adapter_type')?.value === 'manual') {
+        <p class="form-help form-help--notice">Manual reference values are not live telemetry and will not create metrics or health evidence.</p>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="sr-cap-total">Reference capacity (GB)</label>
+            <input
+              id="sr-cap-total"
+              type="number"
+              class="form-control"
+              [class.is-invalid]="!!fieldError('capacity_total') || !!capacityError"
+              formControlName="capacity_total"
+              placeholder="e.g. 2000"
+              min="0"
+              step="any"
+              [attr.aria-describedby]="fieldError('capacity_total') ? 'sr-cap-total-err' : null" />
+            @if (fieldError('capacity_total')) {
+              <span id="sr-cap-total-err" class="form-error" role="alert">{{ fieldError('capacity_total') }}</span>
             }
-          </select>
-        </div>
-      </div>
+          </div>
 
-      <!-- Capacity row -->
-      <div class="form-row">
-        <div class="form-group">
-          <label for="sr-cap-total">Total capacity (GB)</label>
-          <input
-            id="sr-cap-total"
-            type="number"
-            class="form-control"
-            [class.is-invalid]="!!fieldError('capacity_total') || !!capacityError"
-            formControlName="capacity_total"
-            placeholder="e.g. 2000"
-            min="0"
-            step="any"
-            [attr.aria-describedby]="fieldError('capacity_total') ? 'sr-cap-total-err' : null" />
-          @if (fieldError('capacity_total')) {
-            <span id="sr-cap-total-err" class="form-error" role="alert">{{ fieldError('capacity_total') }}</span>
-          }
+          <div class="form-group">
+            <label for="sr-cap-used">Reference used capacity (GB)</label>
+            <input
+              id="sr-cap-used"
+              type="number"
+              class="form-control"
+              [class.is-invalid]="!!fieldError('capacity_used') || !!capacityError"
+              formControlName="capacity_used"
+              placeholder="e.g. 800"
+              min="0"
+              step="any"
+              [attr.aria-describedby]="fieldError('capacity_used') ? 'sr-cap-used-err' : null" />
+            @if (fieldError('capacity_used')) {
+              <span id="sr-cap-used-err" class="form-error" role="alert">{{ fieldError('capacity_used') }}</span>
+            }
+          </div>
         </div>
-
-        <div class="form-group">
-          <label for="sr-cap-used">Used capacity (GB)</label>
-          <input
-            id="sr-cap-used"
-            type="number"
-            class="form-control"
-            [class.is-invalid]="!!fieldError('capacity_used') || !!capacityError"
-            formControlName="capacity_used"
-            placeholder="e.g. 800"
-            min="0"
-            step="any"
-            [attr.aria-describedby]="fieldError('capacity_used') ? 'sr-cap-used-err' : null" />
-          @if (fieldError('capacity_used')) {
-            <span id="sr-cap-used-err" class="form-error" role="alert">{{ fieldError('capacity_used') }}</span>
-          }
-        </div>
-      </div>
+      } @else {
+        <p class="form-help form-help--notice">Capacity, utilization, availability, and health will be populated only after a successful provider collection.</p>
+      }
 
       <!-- Cross-field capacity error -->
       @if (capacityError) {

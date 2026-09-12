@@ -379,6 +379,95 @@ def test_filter_events_by_invalid_severity_returns_400(auth_client):
     assert "Invalid severity" in data["error"]
 
 
+def test_paginated_events_return_metadata(auth_client, event_data):
+    """Paginated event responses expose bounded items and totals."""
+    for event_type in ("first", "second", "third"):
+        create_event(auth_client, event_data["resource_id"], event_type=event_type)
+
+    response = auth_client.get("/api/events/?page=2&page_size=2")
+
+    assert response.status_code == 200
+    data = response.get_json()
+    assert len(data["items"]) == 1
+    assert data["pagination"] == {
+        "page": 2,
+        "page_size": 2,
+        "total": 3,
+        "total_pages": 2,
+    }
+
+
+@pytest.mark.parametrize("field,value", [
+    ("event_type", 123),
+    ("message", {"invalid": True}),
+    ("severity", 123),
+])
+def test_create_event_rejects_non_string_fields(auth_client, event_data, field, value):
+    """Malformed JSON fields return validation errors instead of 500s."""
+    payload = {
+        "resource_id": event_data["resource_id"],
+        "event_type": "disk_failure",
+        "message": "Disk failure detected",
+        "severity": "critical",
+    }
+    payload[field] = value
+
+    response = auth_client.post("/api/events/", json=payload)
+
+    assert response.status_code == 400
+
+
+def test_create_event_rejects_overlong_event_type(auth_client, event_data):
+    """Event types cannot exceed the database column length."""
+    response = create_event(
+        auth_client,
+        event_data["resource_id"],
+        event_type="x" * 51,
+    )
+
+    assert response.status_code == 400
+
+
+def test_create_event_rejects_non_object_body(auth_client):
+    """Non-object JSON request bodies return a validation error."""
+    response = auth_client.post("/api/events/", json=["invalid"])
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "error": "Request body must be a JSON object."
+    }
+
+
+def test_event_filters_are_combined_and_event_type_is_case_insensitive(
+    auth_client, event_data
+):
+    """Resource, severity, and partial event type filters compose together."""
+    create_event(
+        auth_client,
+        event_data["resource_id"],
+        event_type="Disk_Failure",
+        message="Disk failed",
+        severity="critical",
+    )
+    create_event(
+        auth_client,
+        event_data["resource_id"],
+        event_type="disk_warning",
+        message="Disk warning",
+        severity="warning",
+    )
+
+    response = auth_client.get(
+        f"/api/events/?resource_id={event_data['resource_id']}"
+        "&severity=critical&event_type=disk_fail"
+    )
+
+    assert response.status_code == 200
+    data = response.get_json()
+    assert len(data) == 1
+    assert data[0]["event_type"] == "Disk_Failure"
+
+
 # ---------------------------------------------------------------------------
 # Filter by event_type
 # ---------------------------------------------------------------------------

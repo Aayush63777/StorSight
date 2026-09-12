@@ -20,13 +20,13 @@ import { ErrorBannerComponent } from '../../../shared/components/error-banner/er
         @if (!submitted()) {
           <p class="eyebrow">Account recovery</p>
           <h1 id="reset-title">Choose a new password</h1>
-          <p class="description">Set a new password for your StorSight account.</p>
+          <p class="description">Set a new password for your StorSight account. Use at least 12 characters.</p>
           <ss-error-banner [message]="error()" [dismissible]="true" (dismissed)="error.set(null)"></ss-error-banner>
           <form #form="ngForm" (ngSubmit)="submit()" novalidate>
             <label for="password">New password</label>
-            <input id="password" name="password" type="password" class="form-control" [(ngModel)]="password" required minlength="8" autocomplete="new-password" />
+            <input id="password" name="password" type="password" class="form-control" [(ngModel)]="password" required minlength="12" autocomplete="new-password" />
             <label for="confirm-password">Confirm password</label>
-            <input id="confirm-password" name="confirmPassword" type="password" class="form-control" [(ngModel)]="confirmPassword" required minlength="8" autocomplete="new-password" />
+            <input id="confirm-password" name="confirmPassword" type="password" class="form-control" [(ngModel)]="confirmPassword" required minlength="12" autocomplete="new-password" />
             @if (confirmPassword && password !== confirmPassword) {
               <p class="validation-message">Passwords do not match.</p>
             }
@@ -66,7 +66,11 @@ export class ResetPasswordComponent {
 
   submit(): void {
     if (!this.token || !this.password || this.password !== this.confirmPassword) {
-      this.error.set('The reset link is invalid or the passwords do not match.');
+      this.error.set('The reset link is invalid, or the passwords do not match.');
+      return;
+    }
+    if (this.password.length < 12) {
+      this.error.set('Use a password of at least 12 characters.');
       return;
     }
 

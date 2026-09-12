@@ -38,7 +38,7 @@ describe('EventService', () => {
     tick();
   }));
 
-  it('list({ resource_id }) — appends ?resource_id= (takes priority)', fakeAsync(() => {
+  it('list({ resource_id }) — appends ?resource_id=', fakeAsync(() => {
     service.list({ resource_id: 1 }).subscribe();
     const req = http.expectOne(r => r.url === EVENTS_URL && r.method === 'GET');
     expect(req.request.params.get('resource_id')).toBe('1');
@@ -47,7 +47,7 @@ describe('EventService', () => {
     tick();
   }));
 
-  it('list({ severity }) — appends ?severity= when no resource_id', fakeAsync(() => {
+  it('list({ severity }) — appends ?severity=', fakeAsync(() => {
     service.list({ severity: 'critical' }).subscribe();
     const req = http.expectOne(r => r.url === EVENTS_URL && r.method === 'GET');
     expect(req.request.params.get('severity')).toBe('critical');
@@ -56,7 +56,7 @@ describe('EventService', () => {
     tick();
   }));
 
-  it('list({ event_type }) — appends ?event_type= when no resource_id or severity', fakeAsync(() => {
+  it('list({ event_type }) — appends ?event_type=', fakeAsync(() => {
     service.list({ event_type: 'disk_failure' }).subscribe();
     const req = http.expectOne(r => r.url === EVENTS_URL && r.method === 'GET');
     expect(req.request.params.get('event_type')).toBe('disk_failure');
@@ -66,11 +66,11 @@ describe('EventService', () => {
     tick();
   }));
 
-  it('list({ resource_id, severity }) — only resource_id sent (mutually exclusive)', fakeAsync(() => {
+  it('list({ resource_id, severity }) — appends both filters', fakeAsync(() => {
     service.list({ resource_id: 1, severity: 'critical' }).subscribe();
     const req = http.expectOne(r => r.url === EVENTS_URL && r.method === 'GET');
     expect(req.request.params.get('resource_id')).toBe('1');
-    expect(req.request.params.has('severity')).toBeFalse();
+    expect(req.request.params.get('severity')).toBe('critical');
     req.flush([EVENT]);
     tick();
   }));

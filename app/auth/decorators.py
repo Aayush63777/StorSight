@@ -51,3 +51,8 @@ def role_required(*allowed_roles):
         return wrapped_view
 
     return decorator
+
+
+def operational_write_required(view):
+    """Allow operational mutations only to engineers and administrators."""
+    return role_required("ENGINEER", "ADMIN")(view)

@@ -10,6 +10,39 @@ class EventRepository(BaseRepository[Event]):
     def __init__(self):
         super().__init__(Event)
 
+    def search(self, resource_id=None, severity=None, event_type=None,
+               limit=None, offset=None):
+        """Return newest events matching all supplied filters."""
+        query = self.model.query
+
+        if resource_id is not None:
+            query = query.filter(self.model.resource_id == resource_id)
+        if severity:
+            query = query.filter(self.model.severity == severity)
+        if event_type:
+            query = query.filter(self.model.event_type.ilike(f"%{event_type}%"))
+
+        query = query.order_by(
+            self.model.occurred_at.desc(),
+            self.model.id.desc(),
+        )
+        if limit is not None:
+            query = query.limit(limit)
+        if offset is not None:
+            query = query.offset(offset)
+        return query.all()
+
+    def count_search(self, resource_id=None, severity=None, event_type=None):
+        """Count events matching all supplied filters."""
+        query = self.model.query
+        if resource_id is not None:
+            query = query.filter(self.model.resource_id == resource_id)
+        if severity:
+            query = query.filter(self.model.severity == severity)
+        if event_type:
+            query = query.filter(self.model.event_type.ilike(f"%{event_type}%"))
+        return query.count()
+
     def get_by_resource_id(self, resource_id: int):
         """Return events for a resource."""
         return (

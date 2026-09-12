@@ -2,7 +2,7 @@
 
 from flask import Blueprint, jsonify, request
 
-from app.auth.decorators import login_required
+from app.auth.decorators import login_required, operational_write_required
 from app.services.alert_service import AlertService
 
 
@@ -44,6 +44,7 @@ def list_alerts():
     resource_id = request.args.get("resource_id", type=int)
     severity = request.args.get("severity")
     status = request.args.get("status")
+    limit = min(max(request.args.get("limit", 100, type=int), 1), 500)
 
     try:
         if resource_id is not None:
@@ -53,7 +54,7 @@ def list_alerts():
         elif status:
             alerts = service.list_by_status(status)
         else:
-            alerts = service.list_alerts()
+            alerts = service.list_alerts(limit=limit)
     except ValueError as exc:
         return jsonify({"error": str(exc)}), 400
 
@@ -73,7 +74,7 @@ def get_alert(alert_id):
 
 
 @alerts_bp.post("/")
-@login_required
+@operational_write_required
 def create_alert():
     """Create a new alert."""
     data = request.get_json(silent=True) or {}
@@ -92,7 +93,7 @@ def create_alert():
 
 
 @alerts_bp.patch("/<int:alert_id>/resolve")
-@login_required
+@operational_write_required
 def resolve_alert(alert_id):
     """Resolve an alert."""
     try:

@@ -2,7 +2,7 @@
 
 from flask import Blueprint, jsonify, request
 
-from app.auth.decorators import login_required
+from app.auth.decorators import login_required, operational_write_required
 from app.services.incident_service import IncidentService
 from app.services.incident_event_service import IncidentEventService
 
@@ -44,7 +44,7 @@ def list_incident_events(incident_id):
 
 
 @incident_events_bp.post("/<int:incident_id>/events")
-@login_required
+@operational_write_required
 def link_event_to_incident(incident_id):
     """Correlate an event with an incident."""
     data = request.get_json(silent=True) or {}

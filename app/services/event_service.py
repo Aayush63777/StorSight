@@ -19,8 +19,63 @@ class EventService:
     def get_by_id(self, event_id: int):
         return self.repository.get_by_id(event_id)
 
-    def list_events(self):
-        return self.repository.get_all()
+    def list_events(self, limit: int | None = None):
+        return self.repository.search(limit=limit)
+
+    def search_events(
+        self,
+        resource_id: int | None = None,
+        severity: str | None = None,
+        event_type: str | None = None,
+        limit: int | None = None,
+    ):
+        """Return events matching every supplied filter."""
+        if severity:
+            severity = severity.strip().lower()
+            if severity not in self.ALLOWED_SEVERITIES:
+                raise ValueError(
+                    f"Invalid severity. Allowed values: "
+                    f"{sorted(self.ALLOWED_SEVERITIES)}"
+                )
+        event_type = event_type.strip() if event_type else None
+        return self.repository.search(
+            resource_id=resource_id,
+            severity=severity,
+            event_type=event_type,
+            limit=limit,
+        )
+
+    def page_events(
+        self,
+        resource_id: int | None = None,
+        severity: str | None = None,
+        event_type: str | None = None,
+        page: int = 1,
+        page_size: int = 50,
+    ):
+        """Return one bounded page and the matching total."""
+        if page < 1 or page_size < 1:
+            raise ValueError("Page and page size must be positive.")
+        normalized_severity = severity.strip().lower() if severity else None
+        if normalized_severity and normalized_severity not in self.ALLOWED_SEVERITIES:
+            raise ValueError(
+                f"Invalid severity. Allowed values: "
+                f"{sorted(self.ALLOWED_SEVERITIES)}"
+            )
+        normalized_type = event_type.strip() if event_type else None
+        total = self.repository.count_search(
+            resource_id=resource_id,
+            severity=normalized_severity,
+            event_type=normalized_type,
+        )
+        items = self.repository.search(
+            resource_id=resource_id,
+            severity=normalized_severity,
+            event_type=normalized_type,
+            limit=page_size,
+            offset=(page - 1) * page_size,
+        )
+        return items, total
 
     def list_by_resource(self, resource_id: int):
         return self.repository.get_by_resource_id(resource_id)
@@ -76,18 +131,24 @@ class EventService:
 
     @staticmethod
     def _validate_event_type(event_type: str) -> str:
-        if not event_type or not event_type.strip():
+        if not isinstance(event_type, str) or not event_type.strip():
             raise ValueError("Event type is required.")
-        return event_type.strip()
+        value = event_type.strip()
+        if len(value) > 50:
+            raise ValueError("Event type must be 50 characters or fewer.")
+        return value
 
     @staticmethod
     def _validate_message(message: str) -> str:
-        if not message or not message.strip():
+        if not isinstance(message, str) or not message.strip():
             raise ValueError("Event message is required.")
         return message.strip()
 
     def _validate_severity(self, severity: str) -> str:
-        if not severity or severity.strip().lower() not in self.ALLOWED_SEVERITIES:
+        if (
+            not isinstance(severity, str)
+            or severity.strip().lower() not in self.ALLOWED_SEVERITIES
+        ):
             raise ValueError(
                 f"Invalid severity. Allowed values: "
                 f"{sorted(self.ALLOWED_SEVERITIES)}"

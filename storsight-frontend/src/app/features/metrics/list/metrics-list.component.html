@@ -1,6 +1,9 @@
 <ss-page-header
   title="Metrics"
   subtitle="Infrastructure performance metrics">
+  <button class="btn btn--ghost" type="button" (click)="refresh()" [disabled]="refreshBusy()" aria-label="Refresh metrics">
+    {{ refreshBusy() ? 'Refreshing…' : 'Refresh' }}
+  </button>
 </ss-page-header>
 
 <!-- Filter bar -->
@@ -30,6 +33,17 @@
       [value]="metricNameFilter()"
       (input)="onNameInput($any($event.target).value)"
       aria-label="Filter by metric name" />
+  </div>
+
+  <div class="filter-bar__field">
+    <label for="metric-time-range" class="sr-only">Metric time range</label>
+    <select id="metric-time-range" class="form-control filter-bar__select" [value]="timeRange()" (change)="onTimeRangeChange($any($event.target).value)" aria-label="Metric time range">
+      <option value="15m">Last 15 minutes</option>
+      <option value="1h">Last hour</option>
+      <option value="6h">Last 6 hours</option>
+      <option value="24h">Last 24 hours</option>
+      <option value="7d">Last 7 days</option>
+    </select>
   </div>
 
   @if (hasActiveFilters()) {
@@ -69,9 +83,19 @@
   <div class="card empty-card">
     <ss-empty-state
       icon="📈"
-      message="No metrics found"
-      [subMessage]="hasActiveFilters() ? 'No metrics match the selected filters.' : 'No metrics have been recorded yet.'">
+      [message]="emptyReason() === 'filtered' ? 'No metrics match the selected filters.' : emptyReason() === 'unconfigured' ? 'Monitoring is not configured for this resource.' : emptyReason() === 'provider_failure' ? 'Telemetry collection is failing.' : emptyReason() === 'stale' ? 'Telemetry is stale.' : 'No telemetry has been collected yet.'"
+      [subMessage]="emptyReason() === 'provider_failure' ? 'Check the resource monitoring error and provider connection.' : emptyReason() === 'stale' ? 'The last successful collection is older than the configured threshold.' : 'Metrics appear here after a successful provider collection.'">
     </ss-empty-state>
+    @for (r of resources(); track r.id) {
+      @if (resourceFilter() === null || resourceFilter() === r.id) {
+        <div class="metric-context">
+          <strong>{{ r.name }}</strong>
+          <span>Monitoring: {{ r.monitoring_state ?? 'unconfigured' }}</span>
+          <span>Last successful collection: {{ r.last_metric_at ? (r.last_metric_at | relativeTime) : 'Never' }}</span>
+          @if (r.monitoring_error) { <span class="metric-context__error">{{ r.monitoring_error }}</span> }
+        </div>
+      }
+    }
     @if (hasActiveFilters()) {
       <div class="empty-card__action">
         <button class="btn btn--ghost" (click)="clearFilters()">Clear Filters</button>
@@ -82,6 +106,22 @@
 
 <!-- Metrics table -->
 @if (!loading() && !error() && metrics().length > 0) {
+  @if (trendPoints().length > 1) {
+    <section class="card metric-trend" aria-labelledby="metric-trend-title">
+      <div class="metric-trend__header">
+        <div>
+          <span class="eyebrow">Collected telemetry</span>
+          <h2 id="metric-trend-title">{{ trendMetric() }}</h2>
+        </div>
+        <span class="metric-trend__count">{{ trendPoints().length }} samples</span>
+      </div>
+      <div class="metric-trend__bars" aria-label="Metric trend from persisted telemetry">
+        @for (point of trendPoints(); track point.recorded_at + point.value) {
+          <span class="metric-trend__bar" [style.height.%]="point.height" [attr.title]="point.value + ' at ' + point.recorded_at"></span>
+        }
+      </div>
+    </section>
+  }
   <div class="card metrics-table-card">
     <div class="table-wrapper">
       <table class="table" aria-label="Metrics">
@@ -91,6 +131,7 @@
             <th scope="col">Value</th>
             <th scope="col">Resource</th>
             <th scope="col">Recorded</th>
+            <th scope="col">Source</th>
           </tr>
         </thead>
         <tbody>
@@ -119,6 +160,7 @@
               <td class="metrics-row__time">
                 {{ m.recorded_at | relativeTime }}
               </td>
+              <td>{{ m.source ?? 'unknown' }}</td>
             </tr>
           }
         </tbody>
@@ -130,6 +172,11 @@
         {{ metrics().length }} {{ metrics().length === 1 ? 'metric' : 'metrics' }}
         @if (hasActiveFilters()) { (filtered) }
       </span>
+      <div class="pagination-controls" aria-label="Metric pagination">
+        <button class="btn btn--ghost btn--sm" type="button" (click)="goToPage(pagination().page - 1)" [disabled]="pagination().page <= 1">Previous</button>
+        <span>Page {{ pagination().page }} of {{ pagination().total_pages || 1 }}</span>
+        <button class="btn btn--ghost btn--sm" type="button" (click)="goToPage(pagination().page + 1)" [disabled]="pagination().page >= pagination().total_pages">Next</button>
+      </div>
     </div>
   </div>
 }

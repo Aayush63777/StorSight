@@ -63,8 +63,25 @@
         </div>
         <div class="info-item">
           <dt>Health status</dt>
-          <dd><ss-status-badge [status]="r.health_status"></ss-status-badge></dd>
+          <dd>
+            <ss-status-badge [status]="r.health_status"></ss-status-badge>
+            @if (r.health_reason) { <small>{{ r.health_reason }}</small> }
+          </dd>
         </div>
+        <div class="info-item">
+          <dt>Monitoring state</dt>
+          <dd>{{ r.monitoring_state ?? 'unconfigured' }}</dd>
+        </div>
+        <div class="info-item">
+          <dt>Last seen</dt>
+          <dd>{{ r.last_seen ? (r.last_seen | relativeTime) : 'Never' }}</dd>
+        </div>
+        @if (r.monitoring_error) {
+          <div class="info-item">
+            <dt>Monitoring error</dt>
+            <dd class="error-text">{{ r.monitoring_error }}</dd>
+          </div>
+        }
       </dl>
     </section>
 

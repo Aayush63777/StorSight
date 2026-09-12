@@ -2,7 +2,7 @@
 
 from flask import Blueprint, jsonify, request
 
-from app.auth.decorators import login_required
+from app.auth.decorators import login_required, operational_write_required
 from app.services.recommendation_service import RecommendationService
 
 
@@ -53,7 +53,7 @@ def get_recommendation(incident_id, rec_id):
 
 
 @recommendations_bp.post("/<int:incident_id>/recommendations")
-@login_required
+@operational_write_required
 def create_recommendation(incident_id):
     """Create a recommendation for an incident."""
     data = request.get_json(silent=True) or {}

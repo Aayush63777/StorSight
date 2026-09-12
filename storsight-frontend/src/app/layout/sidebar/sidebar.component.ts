@@ -7,10 +7,20 @@ import { AuthService } from '../../core/auth/auth.service';
 interface NavItem {
   label: string;
   route: string;
-  icon: string;
+  icon: NavIcon;
   section: 'Overview' | 'Monitoring' | 'Administration';
   adminOnly?: boolean;
 }
+
+type NavIcon =
+  | 'dashboard'
+  | 'storage'
+  | 'metrics'
+  | 'events'
+  | 'alerts'
+  | 'incidents'
+  | 'audit-logs'
+  | 'users';
 
 @Component({
   selector: 'ss-sidebar',
@@ -50,8 +60,34 @@ interface NavItem {
               <span
                 class="sidebar__icon"
                 aria-hidden="true"
-                [innerHTML]="item.icon"
-              ></span>
+              >
+                @switch (item.icon) {
+                  @case ('dashboard') {
+                    <svg viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1.5" fill="currentColor"/><rect x="9" y="1" width="6" height="6" rx="1.5" fill="currentColor" opacity=".65"/><rect x="1" y="9" width="6" height="6" rx="1.5" fill="currentColor" opacity=".65"/><rect x="9" y="9" width="6" height="6" rx="1.5" fill="currentColor" opacity=".35"/></svg>
+                  }
+                  @case ('storage') {
+                    <svg viewBox="0 0 16 16" fill="none"><rect x="1" y="3" width="14" height="4" rx="1.5"/><rect x="1" y="9" width="14" height="4" rx="1.5"/><circle cx="12.5" cy="5" r="1" fill="currentColor"/><circle cx="12.5" cy="11" r="1" fill="currentColor"/></svg>
+                  }
+                  @case ('metrics') {
+                    <svg viewBox="0 0 16 16" fill="none"><polyline points="1,12 5,7 8,9 12,4 15,6"/></svg>
+                  }
+                  @case ('events') {
+                    <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5"/><polyline points="8,4 8,8 11,10"/></svg>
+                  }
+                  @case ('alerts') {
+                    <svg viewBox="0 0 16 16" fill="none"><path d="M8 1.5 14.5 13H1.5L8 1.5Z"/><path d="M8 6v3.5"/><circle cx="8" cy="11.5" r=".75" fill="currentColor" stroke="none"/></svg>
+                  }
+                  @case ('incidents') {
+                    <svg viewBox="0 0 16 16" fill="none"><rect x="1.5" y="1.5" width="13" height="13" rx="2"/><path d="M8 4.5V9"/><circle cx="8" cy="11.25" r=".9" fill="currentColor" stroke="none"/></svg>
+                  }
+                  @case ('audit-logs') {
+                    <svg viewBox="0 0 16 16" fill="none"><rect x="2" y="1.5" width="12" height="13" rx="1.5"/><path d="M5 5.5h6M5 8h6M5 10.5h3.5"/></svg>
+                  }
+                  @case ('users') {
+                    <svg viewBox="0 0 16 16" fill="none"><circle cx="6" cy="5" r="2.5"/><path d="M1.8 13C2.2 10.8 3.6 9.5 6 9.5s3.8 1.3 4.2 3.5M11 6.5h4M13 4.5v4"/></svg>
+                  }
+                }
+              </span>
 
               @if (!collapsed) {
                 <span class="sidebar__label">
@@ -173,6 +209,16 @@ interface NavItem {
       opacity: 0.7;
     }
 
+    .sidebar__icon svg {
+      width: 16px;
+      height: 16px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.4;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
     .sidebar__item.active .sidebar__icon,
     .sidebar__item:hover .sidebar__icon {
       opacity: 1;
@@ -242,200 +288,50 @@ export class SidebarComponent {
       label: 'Dashboard',
       route: '/dashboard',
       section: 'Overview',
-      icon: `
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <rect x="1" y="1" width="6" height="6" rx="1.5"
-            fill="currentColor" opacity="0.9"/>
-          <rect x="9" y="1" width="6" height="6" rx="1.5"
-            fill="currentColor" opacity="0.6"/>
-          <rect x="1" y="9" width="6" height="6" rx="1.5"
-            fill="currentColor" opacity="0.6"/>
-          <rect x="9" y="9" width="6" height="6" rx="1.5"
-            fill="currentColor" opacity="0.3"/>
-        </svg>
-      `,
+      icon: 'dashboard',
     },
     {
       label: 'Storage Resources',
       route: '/storage-resources',
       section: 'Monitoring',
-      icon: `
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <rect x="1" y="3" width="14" height="4" rx="1.5"
-            stroke="currentColor" stroke-width="1.4"/>
-          <rect x="1" y="9" width="14" height="4" rx="1.5"
-            stroke="currentColor" stroke-width="1.4"/>
-          <circle cx="12.5" cy="5" r="1" fill="currentColor"/>
-          <circle cx="12.5" cy="11" r="1" fill="currentColor"/>
-        </svg>
-      `,
+      icon: 'storage',
     },
     {
       label: 'Metrics',
       route: '/metrics',
       section: 'Monitoring',
-      icon: `
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <polyline
-            points="1,12 5,7 8,9 12,4 15,6"
-            stroke="currentColor"
-            stroke-width="1.4"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            fill="none"
-          />
-        </svg>
-      `,
+      icon: 'metrics',
     },
     {
       label: 'Events',
       route: '/events',
       section: 'Monitoring',
-      icon: `
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <circle
-            cx="8"
-            cy="8"
-            r="6.5"
-            stroke="currentColor"
-            stroke-width="1.4"
-          />
-          <polyline
-            points="8,4 8,8 11,10"
-            stroke="currentColor"
-            stroke-width="1.4"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          />
-        </svg>
-      `,
+      icon: 'events',
     },
     {
       label: 'Alerts',
       route: '/alerts',
       section: 'Monitoring',
-      icon: `
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <path
-            d="M8 1.5L14.5 13H1.5L8 1.5Z"
-            stroke="currentColor"
-            stroke-width="1.4"
-            stroke-linejoin="round"
-          />
-          <line
-            x1="8"
-            y1="6"
-            x2="8"
-            y2="9.5"
-            stroke="currentColor"
-            stroke-width="1.4"
-            stroke-linecap="round"
-          />
-          <circle cx="8" cy="11.5" r="0.75" fill="currentColor"/>
-        </svg>
-      `,
+      icon: 'alerts',
     },
     {
       label: 'Incidents',
       route: '/incidents',
       section: 'Monitoring',
-      icon: `
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <rect
-            x="1.5"
-            y="1.5"
-            width="13"
-            height="13"
-            rx="2"
-            stroke="currentColor"
-            stroke-width="1.4"
-          />
-          <line
-            x1="8"
-            y1="4.5"
-            x2="8"
-            y2="9"
-            stroke="currentColor"
-            stroke-width="1.6"
-            stroke-linecap="round"
-          />
-          <circle cx="8" cy="11.25" r="0.9" fill="currentColor"/>
-        </svg>
-      `,
+      icon: 'incidents',
     },
     {
       label: 'Audit Logs',
       route: '/audit-logs',
       section: 'Administration',
-      icon: `
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <rect
-            x="2"
-            y="1.5"
-            width="12"
-            height="13"
-            rx="1.5"
-            stroke="currentColor"
-            stroke-width="1.4"
-          />
-          <line
-            x1="5"
-            y1="5.5"
-            x2="11"
-            y2="5.5"
-            stroke="currentColor"
-            stroke-width="1.3"
-            stroke-linecap="round"
-          />
-          <line
-            x1="5"
-            y1="8"
-            x2="11"
-            y2="8"
-            stroke="currentColor"
-            stroke-width="1.3"
-            stroke-linecap="round"
-          />
-          <line
-            x1="5"
-            y1="10.5"
-            x2="8.5"
-            y2="10.5"
-            stroke="currentColor"
-            stroke-width="1.3"
-            stroke-linecap="round"
-          />
-        </svg>
-      `,
+      icon: 'audit-logs',
     },
     {
       label: 'User Management',
       route: '/users',
       section: 'Administration',
       adminOnly: true,
-      icon: `
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <circle
-            cx="6"
-            cy="5"
-            r="2.5"
-            stroke="currentColor"
-            stroke-width="1.3"
-          />
-          <path
-            d="M1.8 13c.4-2.2 1.8-3.5 4.2-3.5s3.8 1.3 4.2 3.5"
-            stroke="currentColor"
-            stroke-width="1.3"
-            stroke-linecap="round"
-          />
-          <path
-            d="M11 6.5h4M13 4.5v4"
-            stroke="currentColor"
-            stroke-width="1.3"
-            stroke-linecap="round"
-          />
-        </svg>
-      `,
+      icon: 'users',
     },
   ];
 

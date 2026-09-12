@@ -13,9 +13,13 @@ class BaseConfig:
     # ------------------------------------------------------------------
     # Session
     # ------------------------------------------------------------------
-    SESSION_COOKIE_HTTPONLY = True
-    SESSION_COOKIE_SAMESITE = "Lax"
-    SESSION_COOKIE_SECURE = False
+    SESSION_COOKIE_HTTPONLY = (
+        os.getenv("SESSION_COOKIE_HTTPONLY", "true").lower() == "true"
+    )
+    SESSION_COOKIE_SAMESITE = os.getenv("SESSION_COOKIE_SAMESITE", "Lax")
+    SESSION_COOKIE_SECURE = (
+        os.getenv("SESSION_COOKIE_SECURE", "false").lower() == "true"
+    )
 
     # ------------------------------------------------------------------
     # Frontend / CORS
@@ -31,6 +35,18 @@ class BaseConfig:
     PASSWORD_RESET_TOKEN_TTL_MINUTES = int(
         os.getenv("PASSWORD_RESET_TOKEN_TTL_MINUTES", "30")
     )
+
+    # ------------------------------------------------------------------
+    # Storage monitoring
+    # ------------------------------------------------------------------
+    MONITORING_ENABLED = os.getenv("MONITORING_ENABLED", "true").lower() == "true"
+    MONITORING_INTERVAL_SECONDS = int(
+        os.getenv("MONITORING_INTERVAL_SECONDS", "60")
+    )
+    STORAGE_CONNECT_TIMEOUT_SECONDS = int(
+        os.getenv("STORAGE_CONNECT_TIMEOUT_SECONDS", "10")
+    )
+    STORAGE_MAX_RETRIES = int(os.getenv("STORAGE_MAX_RETRIES", "2"))
 
     # ------------------------------------------------------------------
     # Email / SMTP
@@ -117,7 +133,9 @@ class ProductionConfig(BaseConfig):
 
     # Production uses HTTPS.
     SESSION_COOKIE_HTTPONLY = True
-    SESSION_COOKIE_SAMESITE = "Lax"
+    # The SPA and API are commonly hosted on different domains. Cross-site
+    # credentialed requests need SameSite=None; Secure is mandatory for it.
+    SESSION_COOKIE_SAMESITE = os.getenv("SESSION_COOKIE_SAMESITE", "None")
     SESSION_COOKIE_SECURE = True
 
     FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "")

@@ -11,12 +11,12 @@ import {
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { Subject, of } from 'rxjs';
+import { Subject, Subscription, of } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil, catchError } from 'rxjs/operators';
 
 import { EventService } from '../../../core/services/event.service';
 import { StorageResourceService } from '../../../core/services/storage-resource.service';
-import { Event as InfraEvent, StorageResource } from '../../../core/models';
+import { Event as InfraEvent, EventPage, StorageResource } from '../../../core/models';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { SeverityBadgeComponent } from '../../../shared/components/severity-badge/severity-badge.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
@@ -60,23 +60,19 @@ export class EventListComponent implements OnInit, OnDestroy {
   error            = signal<string | null>(null);
   resourceError    = signal<string | null>(null);
   events           = signal<InfraEvent[]>([]);
+  pagination       = signal<EventPage['pagination']>({ page: 1, page_size: 50, total: 0, total_pages: 0 });
   resources        = signal<StorageResource[]>([]);
+  refreshBusy      = signal(false);
+  private eventsSubscription?: Subscription;
 
-  // ── Filter state (backend: mutually exclusive) ─────────────
+  // ── Filter state ───────────────────────────────────────────
   resourceFilter  = signal<number | null>(null);
   severityFilter  = signal('');
 
-  // Client-side event_type search (no dedicated combined API param)
   eventTypeSearch = signal('');
   private readonly typeSearch$ = new Subject<string>();
 
-  /** Apply client-side event_type search on top of API results. */
-  filtered = computed(() => {
-    const q = this.eventTypeSearch().toLowerCase().trim();
-    return q
-      ? this.events().filter(e => e.event_type.toLowerCase().includes(q))
-      : this.events();
-  });
+  filtered = computed(() => this.events());
 
   hasActiveFilters = computed(() =>
     this.resourceFilter() !== null ||
@@ -106,6 +102,8 @@ export class EventListComponent implements OnInit, OnDestroy {
       takeUntil(this.destroy$),
     ).subscribe(v => {
       this.eventTypeSearch.set(v);
+      this.pagination.update(p => ({ ...p, page: 1 }));
+      this.loadEvents();
       this.cdr.markForCheck();
     });
 
@@ -126,6 +124,7 @@ export class EventListComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.eventsSubscription?.unsubscribe();
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -133,17 +132,13 @@ export class EventListComponent implements OnInit, OnDestroy {
   onResourceChange(value: string): void {
     const id = value === '' ? null : Number(value);
     this.resourceFilter.set(id);
-    this.severityFilter.set('');    // clear other filter (mutually exclusive)
-    this.eventTypeSearch.set('');
-    this.typeSearch$.next('');
+    this.pagination.update(p => ({ ...p, page: 1 }));
     this.loadEvents();
   }
 
   onSeverityChange(value: string): void {
     this.severityFilter.set(value);
-    this.resourceFilter.set(null);  // clear other filter (mutually exclusive)
-    this.eventTypeSearch.set('');
-    this.typeSearch$.next('');
+    this.pagination.update(p => ({ ...p, page: 1 }));
     this.loadEvents();
   }
 
@@ -156,19 +151,29 @@ export class EventListComponent implements OnInit, OnDestroy {
     this.severityFilter.set('');
     this.eventTypeSearch.set('');
     this.typeSearch$.next('');
+    this.pagination.update(p => ({ ...p, page: 1 }));
     this.loadEvents();
   }
 
   loadEvents(): void {
+    this.eventsSubscription?.unsubscribe();
     this.loading.set(true);
     this.error.set(null);
 
     const resource_id = this.resourceFilter() ?? undefined;
     const severity    = this.severityFilter() || undefined;
+    const event_type  = this.eventTypeSearch().trim() || undefined;
 
-    this.eventSvc.list({ resource_id, severity }).subscribe({
-      next: (list) => {
-        this.events.set(list);
+    this.eventsSubscription = this.eventSvc.page({
+      resource_id,
+      severity,
+      event_type,
+      page: this.pagination().page,
+      page_size: 50,
+    }).subscribe({
+      next: (result) => {
+        this.events.set(result.items);
+        this.pagination.set(result.pagination);
         this.loading.set(false);
         this.cdr.markForCheck();
       },
@@ -178,6 +183,20 @@ export class EventListComponent implements OnInit, OnDestroy {
         this.cdr.markForCheck();
       },
     });
+  }
+
+  goToPage(page: number): void {
+    if (page < 1 || page > this.pagination().total_pages) return;
+    this.pagination.update(p => ({ ...p, page }));
+    this.loadEvents();
+  }
+
+  refresh(): void {
+    if (this.refreshBusy()) return;
+    this.refreshBusy.set(true);
+    this.loadResources();
+    this.loadEvents();
+    setTimeout(() => this.refreshBusy.set(false), 300);
   }
 
   navigateTo(id: number): void {

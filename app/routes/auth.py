@@ -11,6 +11,9 @@ auth_bp = Blueprint("auth", __name__, url_prefix="/api/auth")
 
 auth_service = AuthService()
 mail_service = MailService()
+# Compatibility alias for integrations that imported the old name.  Both names
+# intentionally point to the same configured transactional mail adapter.
+email_service = mail_service
 
 
 @auth_bp.post("/login")
@@ -48,6 +51,7 @@ def login():
 
 
 @auth_bp.post("/forgot-password")
+@limiter.limit("3 per hour")
 def forgot_password():
     """Issue a password reset link without revealing account existence."""
     data = request.get_json(silent=True) or {}
@@ -69,10 +73,18 @@ def forgot_password():
         user, raw_token = reset_data
 
         frontend_origin = current_app.config["FRONTEND_ORIGIN"].rstrip("/")
+        if not frontend_origin:
+            current_app.logger.error(
+                "Password reset email not sent: FRONTEND_ORIGIN is not configured."
+            )
+            return jsonify({"message": message}), 202
         reset_url = f"{frontend_origin}/reset-password?token={raw_token}"
 
         try:
-            mail_service.send_password_reset(user.email, reset_url)
+            # Keep the compatibility alias as the call site so integrations
+            # that replace the historic ``email_service`` dependency continue
+            # to work.  By default it is the same MailService instance.
+            email_service.send_password_reset(user.email, reset_url)
         except Exception:
             current_app.logger.exception(
                 "Password reset email delivery failed"
@@ -94,9 +106,9 @@ def reset_password():
             {"error": "The reset link is invalid or has expired."}
         ), 400
 
-    if len(password) < 8:
+    if len(password) < 12:
         return jsonify(
-            {"error": "Password must be at least 8 characters."}
+            {"error": "Password must be at least 12 characters."}
         ), 400
 
     if not auth_service.reset_password(token, password):

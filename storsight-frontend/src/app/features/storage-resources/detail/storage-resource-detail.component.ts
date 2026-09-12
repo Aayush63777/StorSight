@@ -109,8 +109,7 @@ export class StorageResourceDetailComponent implements OnInit {
   // ── Capacity helpers ──────────────────────────────────────
 
   utilPercent(r: StorageResource): number {
-    if (!r.capacity_total || r.capacity_total <= 0) return 0;
-    return Math.min(100, Math.round(((r.capacity_used ?? 0) / r.capacity_total) * 100));
+    return r.capacity_utilization_percent ?? 0;
   }
 
   utilClass(r: StorageResource): string {
@@ -127,8 +126,6 @@ export class StorageResourceDetailComponent implements OnInit {
   }
 
   availableCapacity(r: StorageResource): string {
-    if (r.capacity_total === null || r.capacity_used === null) return '—';
-    const avail = r.capacity_total - r.capacity_used;
-    return this.formatCapacity(avail < 0 ? 0 : avail);
+    return this.formatCapacity(r.capacity_available ?? null);
   }
 }

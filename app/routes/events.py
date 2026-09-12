@@ -2,7 +2,7 @@
 
 from flask import Blueprint, jsonify, request
 
-from app.auth.decorators import login_required
+from app.auth.decorators import login_required, operational_write_required
 from app.services.event_service import EventService
 
 
@@ -37,17 +37,50 @@ def list_events():
     """List events with optional filters."""
     resource_id = request.args.get("resource_id", type=int)
     severity = request.args.get("severity")
-    event_type = request.args.get("event_type")
+    event_type = request.args.get("event_type", "").strip()
+    limit = min(max(request.args.get("limit", 100, type=int), 1), 500)
+
+    paginated = (
+        request.args.get("page") is not None
+        or request.args.get("page_size") is not None
+    )
+    if paginated:
+        try:
+            page = int(request.args.get("page", 1))
+            page_size = min(max(int(request.args.get("page_size", 50)), 1), 200)
+            if page < 1:
+                raise ValueError
+        except (TypeError, ValueError):
+            return jsonify({"error": "Invalid page or page_size parameter."}), 400
+
+        try:
+            events, total = service.page_events(
+                resource_id=resource_id,
+                severity=severity,
+                event_type=event_type or None,
+                page=page,
+                page_size=page_size,
+            )
+        except ValueError as exc:
+            return jsonify({"error": str(exc)}), 400
+
+        return jsonify({
+            "items": [_serialize_event(event) for event in events],
+            "pagination": {
+                "page": page,
+                "page_size": page_size,
+                "total": total,
+                "total_pages": (total + page_size - 1) // page_size,
+            },
+        }), 200
 
     try:
-        if resource_id is not None:
-            events = service.list_by_resource(resource_id)
-        elif severity:
-            events = service.list_by_severity(severity)
-        elif event_type:
-            events = service.list_by_event_type(event_type)
-        else:
-            events = service.list_events()
+        events = service.search_events(
+            resource_id=resource_id,
+            severity=severity,
+            event_type=event_type or None,
+            limit=limit,
+        )
     except ValueError as exc:
         return jsonify({"error": str(exc)}), 400
 
@@ -67,10 +100,12 @@ def get_event(event_id):
 
 
 @events_bp.post("/")
-@login_required
+@operational_write_required
 def create_event():
     """Record a new infrastructure event."""
     data = request.get_json(silent=True) or {}
+    if not isinstance(data, dict):
+        return jsonify({"error": "Request body must be a JSON object."}), 400
 
     try:
         event = service.record_event(

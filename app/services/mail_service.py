@@ -13,10 +13,7 @@ class MailService:
         host = current_app.config.get("MAIL_HOST")
         sender = current_app.config.get("MAIL_FROM")
         if not host or not sender:
-            current_app.logger.warning(
-                "Password reset email not sent: SMTP is not configured."
-            )
-            return
+            raise RuntimeError("Transactional email is not configured.")
 
         message = EmailMessage()
         message["Subject"] = "Reset your StorSight password"
@@ -33,8 +30,10 @@ class MailService:
         username = current_app.config.get("MAIL_USERNAME")
         password = current_app.config.get("MAIL_PASSWORD")
         with smtplib.SMTP(host, port, timeout=10) as smtp:
+            smtp.ehlo()
             if current_app.config.get("MAIL_USE_TLS"):
                 smtp.starttls()
+                smtp.ehlo()
             if username and password:
                 smtp.login(username, password)
             smtp.send_message(message)

@@ -2,7 +2,7 @@
 
 from flask import Blueprint, jsonify, request
 
-from app.auth.decorators import login_required
+from app.auth.decorators import login_required, operational_write_required
 from app.services.root_cause_analysis_service import RootCauseAnalysisService
 
 
@@ -53,7 +53,7 @@ def get_rca(incident_id, analysis_id):
 
 
 @rca_bp.post("/<int:incident_id>/rca")
-@login_required
+@operational_write_required
 def create_rca(incident_id):
     """Create a root-cause analysis for an incident."""
     data = request.get_json(silent=True) or {}

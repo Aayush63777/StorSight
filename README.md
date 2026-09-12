@@ -237,7 +237,7 @@ SMTP provider in production. Do not run Flask's development server publicly.
     - `FRONTEND_ORIGIN=https://<your-frontend-domain>`
     - `SESSION_COOKIE_SECURE=true`
     - `RATE_LIMIT_STORAGE_URI` using Redis for multi-instance deployments
-    - SMTP variables: `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `MAIL_FROM`
+    - SMTP variables: `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM`, `MAIL_USE_TLS`
 
 2. Deploy with the included start command:
 
@@ -251,7 +251,20 @@ SMTP provider in production. Do not run Flask's development server publicly.
     flask --app wsgi:app db upgrade
     ```
 
-4. Bootstrap the first admin once, using environment variables rather than a
+4. Run the monitoring worker as a separate process. It requires a supported
+    adapter configuration and a reachable Redis instance:
+
+    ```bash
+    python monitor.py --loop
+    ```
+
+     Use `python monitor.py --once` for a deployment smoke test. The current
+     supported live adapter is `http_json`, which requires an HTTPS endpoint
+     returning validated `total_bytes` and `used_bytes` values. Vendor-specific
+     adapters must be added only when the target storage API and credentials
+     are available.
+
+5. Bootstrap the first admin once, using environment variables rather than a
     hardcoded password:
 
     ```bash
@@ -277,7 +290,20 @@ Publish `dist/storsight-frontend/browser` and configure SPA fallback to
 
 ### Production checks
 
-- Confirm `GET /health` returns `{"status":"ok"}`.
+- Confirm `GET /health` returns `{"status":"ok"}` for process liveness.
+- Confirm `GET /health/ready` returns HTTP `200` with both `database` and
+    `redis` marked `ok` before routing traffic to the instance. It returns
+    HTTP `503` when either dependency is unavailable.
+- Confirm the worker process is running and that monitored resources expose
+    `monitoring_state=online`, `last_seen`, and `last_metric_at`. An
+    `unconfigured`, `stale`, or `error` state is not healthy telemetry.
+- Configure the email provider with valid SMTP credentials and verify the
+    sender domain. Publish the provider's SPF and DKIM records, then publish a
+    DMARC record (start with `p=none` monitoring and enforce it after observing
+    reports).
+- Store `SECRET_KEY`, `DATABASE_URL`, SMTP credentials, and
+    `RATE_LIMIT_STORAGE_URI` only in the hosting provider's encrypted secret
+    store. Rotate them without committing them to the repository.
 - Confirm HTTPS is active and session cookies have the `Secure` attribute.
 - Confirm login rate limiting uses shared Redis storage when scaled out.
 - Confirm SMTP reset emails are delivered without logging reset URLs.

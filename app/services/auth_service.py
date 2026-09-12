@@ -89,6 +89,9 @@ class AuthService:
             return False
 
         reset_token.user.password_hash = self.hash_password(password)
+        # A password change invalidates every existing login, not merely the
+        # browser session that submitted this request.
+        reset_token.user.session_version += 1
         reset_token.used_at = now
         PasswordResetToken.query.filter(
             PasswordResetToken.user_id == reset_token.user_id,

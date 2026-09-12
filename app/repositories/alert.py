@@ -46,10 +46,10 @@ class AlertRepository(BaseRepository[Alert]):
             .all()
         )
 
-    def get_all(self):
+    def get_all(self, limit: int | None = None):
         """Return all alerts, newest first."""
-        return (
+        query = (
             self.model.query
             .order_by(self.model.created_at.desc())
-            .all()
         )
+        return query.limit(limit).all() if limit else query.all()
