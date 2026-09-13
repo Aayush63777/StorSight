@@ -39,6 +39,34 @@
     </ss-error-banner>
   }
 
+  @if (actionMessage()) {
+    <div class="action-message" role="status">{{ actionMessage() }}</div>
+  }
+  @if (actionError()) {
+    <ss-error-banner
+      [message]="actionError()"
+      [dismissible]="true"
+      (dismissed)="actionError.set(null)">
+    </ss-error-banner>
+  }
+
+  @if (r.adapter_type !== 'manual') {
+    <section class="card detail-card monitoring-actions" aria-labelledby="monitoring-actions-title">
+      <div>
+        <h2 class="detail-card__title" id="monitoring-actions-title">Monitoring actions</h2>
+        <p class="no-data">Verify the configured adapter or refresh provider metadata.</p>
+      </div>
+      <div class="monitoring-actions__buttons">
+        <button class="btn btn--ghost" type="button" (click)="onTestConnection()" [disabled]="testingConnection() || discovering()">
+          {{ testingConnection() ? 'Testing...' : 'Test connection' }}
+        </button>
+        <button class="btn btn--primary" type="button" (click)="onDiscover()" [disabled]="testingConnection() || discovering()">
+          {{ discovering() ? 'Discovering...' : 'Discover metadata' }}
+        </button>
+      </div>
+    </section>
+  }
+
   <div class="detail-grid">
 
     <!-- Overview card -->

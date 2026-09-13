@@ -9,8 +9,8 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
-import { forkJoin, throwError } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { forkJoin, Observable, of } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
 
 import { StorageResourceService } from '../../core/services/storage-resource.service';
 import { AlertService } from '../../core/services/alert.service';
@@ -28,11 +28,16 @@ import { ErrorBannerComponent } from '../../shared/components/error-banner/error
 import { RelativeTimePipe } from '../../shared/pipes/relative-time.pipe';
 
 interface DashboardData {
-  resources: StorageResource[];
-  alerts: Alert[];
-  incidents: Incident[];
-  events: Event[];
-  auditLogs: AuditLog[];
+  resources: DashboardResult<StorageResource[]>;
+  alerts: DashboardResult<Alert[]>;
+  incidents: DashboardResult<Incident[]>;
+  events: DashboardResult<Event[]>;
+  auditLogs: DashboardResult<AuditLog[]>;
+}
+
+interface DashboardResult<T> {
+  value: T;
+  failed: boolean;
 }
 
 @Component({
@@ -64,6 +69,8 @@ export class DashboardComponent implements OnInit {
   // ── State signals ─────────────────────────────────────────
   loading = signal(true);
   error = signal<string | null>(null);
+  degraded = signal(false);
+  degradedSections = signal<string[]>([]);
   lastUpdated = signal<Date | null>(null);
 
   // ── Raw data ──────────────────────────────────────────────
@@ -136,30 +143,43 @@ export class DashboardComponent implements OnInit {
   loadDashboard(): void {
     this.loading.set(true);
     this.error.set(null);
+    this.degraded.set(false);
+    this.degradedSections.set([]);
 
     forkJoin({
-      resources: this.resources.list().pipe(catchError(error => throwError(() => error))),
-      alerts:    this.alertSvc.list().pipe(catchError(error => throwError(() => error))),
-      incidents: this.incidentSvc.list().pipe(catchError(error => throwError(() => error))),
-      events:    this.eventSvc.list().pipe(catchError(error => throwError(() => error))),
-      auditLogs: this.auditSvc.list().pipe(catchError(error => throwError(() => error))),
+      resources: this.dashboardRequest(this.resources.list(), []),
+      alerts:    this.dashboardRequest(this.alertSvc.list(), []),
+      incidents: this.dashboardRequest(this.incidentSvc.list(), []),
+      events:    this.dashboardRequest(this.eventSvc.list(), []),
+      auditLogs: this.dashboardRequest(this.auditSvc.list(), []),
     }).subscribe({
       next: (data: DashboardData) => {
-        this.allResources.set(data.resources);
-        this.allAlerts.set(data.alerts);
-        this.allIncidents.set(data.incidents);
-        this.allEvents.set(data.events);
-        this.auditLogs.set(data.auditLogs);
+        const failedSections = Object.entries(data)
+          .filter(([, result]) => result.failed)
+          .map(([section]) => section);
+
+        this.allResources.set(data.resources.value);
+        this.allAlerts.set(data.alerts.value);
+        this.allIncidents.set(data.incidents.value);
+        this.allEvents.set(data.events.value);
+        this.auditLogs.set(data.auditLogs.value);
+        this.degradedSections.set(failedSections);
+        this.degraded.set(failedSections.length > 0);
         this.lastUpdated.set(new Date());
         this.loading.set(false);
         this.cdr.markForCheck();
       },
-      error: () => {
-        this.error.set('Unable to load dashboard data. Please try again.');
-        this.loading.set(false);
-        this.cdr.markForCheck();
-      },
     });
+  }
+
+  private dashboardRequest<T>(
+    request: Observable<T>,
+    fallback: T,
+  ): Observable<DashboardResult<T>> {
+    return request.pipe(
+      map(value => ({ value, failed: false })),
+      catchError(() => of({ value: fallback, failed: true })),
+    );
   }
 
   navigateToIncident(id: number): void {

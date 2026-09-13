@@ -75,6 +75,33 @@
 .attention-banner p { color: var(--color-text-muted); font-size: var(--font-size-sm); margin: 0.15rem 0 0; }
 .attention-banner .btn { margin-left: auto; }
 
+.degraded-banner {
+  align-items: center;
+  background: rgba(234, 179, 8, 0.08);
+  border: 1px solid rgba(234, 179, 8, 0.35);
+  border-radius: var(--radius-lg);
+  display: flex;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+  padding: var(--space-4) var(--space-5);
+}
+
+.degraded-banner__icon {
+  align-items: center;
+  background: #eab308;
+  border-radius: 50%;
+  color: #171717;
+  display: flex;
+  flex: 0 0 1.5rem;
+  font-weight: 800;
+  height: 1.5rem;
+  justify-content: center;
+}
+
+.degraded-banner strong { font-size: 0.9rem; }
+.degraded-banner p { color: var(--color-text-muted); font-size: var(--font-size-sm); margin: 0.15rem 0 0; }
+.degraded-banner .btn { margin-left: auto; }
+
 // ── KPI Grid ────────────────────────────────────────────────
 
 .kpi-grid {

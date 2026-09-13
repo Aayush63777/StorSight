@@ -33,4 +33,15 @@ export class StorageResourceService {
   delete(id: number): Observable<{ message: string }> {
     return this.http.delete<{ message: string }>(`${this.base}/${id}`);
   }
+
+  testConnection(id: number): Observable<{ status: string; connection_tested_at: string }> {
+    return this.http.post<{ status: string; connection_tested_at: string }>(
+      `${this.base}/${id}/test-connection`,
+      {},
+    );
+  }
+
+  discover(id: number): Observable<Record<string, unknown>> {
+    return this.http.post<Record<string, unknown>>(`${this.base}/${id}/discover`, {});
+  }
 }

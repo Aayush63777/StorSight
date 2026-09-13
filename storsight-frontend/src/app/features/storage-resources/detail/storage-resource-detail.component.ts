@@ -44,8 +44,12 @@ export class StorageResourceDetailComponent implements OnInit {
 
   loading         = signal(true);
   deleting        = signal(false);
+  testingConnection = signal(false);
+  discovering     = signal(false);
   error           = signal<string | null>(null);
   deleteError     = signal<string | null>(null);
+  actionMessage   = signal<string | null>(null);
+  actionError     = signal<string | null>(null);
   resource        = signal<StorageResource | null>(null);
   showDeleteDialog = signal(false);
 
@@ -101,6 +105,48 @@ export class StorageResourceDetailComponent implements OnInit {
             ? 'Resource no longer exists.'
             : 'Failed to delete resource. Please try again.',
         );
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  onTestConnection(): void {
+    const r = this.resource();
+    if (!r || this.testingConnection() || this.discovering()) return;
+
+    this.testingConnection.set(true);
+    this.actionMessage.set(null);
+    this.actionError.set(null);
+    this.svc.testConnection(r.id).subscribe({
+      next: (result) => {
+        this.testingConnection.set(false);
+        this.actionMessage.set(`Connection verified at ${new Date(result.connection_tested_at).toLocaleString()}.`);
+        this.loadResource(r.id);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.testingConnection.set(false);
+        this.actionError.set(err.error?.error ?? 'Connection test failed.');
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  onDiscover(): void {
+    const r = this.resource();
+    if (!r || this.testingConnection() || this.discovering()) return;
+
+    this.discovering.set(true);
+    this.actionMessage.set(null);
+    this.actionError.set(null);
+    this.svc.discover(r.id).subscribe({
+      next: () => {
+        this.discovering.set(false);
+        this.actionMessage.set('Provider metadata refreshed.');
+        this.loadResource(r.id);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.discovering.set(false);
+        this.actionError.set(err.error?.error ?? 'Provider discovery failed.');
         this.cdr.markForCheck();
       },
     });

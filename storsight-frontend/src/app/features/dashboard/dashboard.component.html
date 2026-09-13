@@ -49,6 +49,19 @@
   <!-- ── Main content (only when loaded) ── -->
   @if (!loading() && !error()) {
 
+    @if (degraded()) {
+      <section class="degraded-banner" role="status" aria-live="polite">
+        <span class="degraded-banner__icon" aria-hidden="true">!</span>
+        <div>
+          <strong>Some dashboard data is unavailable</strong>
+          <p>{{ degradedSections().length }} panel{{ degradedSections().length === 1 ? '' : 's' }} could not be refreshed.</p>
+        </div>
+        <button class="btn btn--ghost" type="button" (click)="loadDashboard()" [disabled]="loading()">
+          Retry
+        </button>
+      </section>
+    }
+
     @if (attentionCount() > 0) {
       <section class="attention-banner" aria-labelledby="attention-title">
         <span class="attention-banner__icon" aria-hidden="true">!</span>
