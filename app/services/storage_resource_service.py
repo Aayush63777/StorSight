@@ -9,6 +9,7 @@ class StorageResourceService:
 
     ALLOWED_STATUSES = {"healthy", "warning", "critical", "offline"}
     ALLOWED_HEALTH_STATUSES = {"healthy", "warning", "critical", "unknown"}
+    ALLOWED_ADAPTER_TYPES = {"manual", "http_json"}
 
     def __init__(self, repository=None):
         self.repository = repository or StorageResourceRepository()
@@ -19,8 +20,12 @@ class StorageResourceService:
     def get_by_name(self, name: str):
         return self.repository.get_by_name(name)
 
-    def list_resources(self):
-        return self.repository.get_all()
+    def list_resources(self, name=None, status=None, resource_type=None):
+        return self.repository.list_filtered(
+            name=name,
+            status=status,
+            resource_type=resource_type,
+        )
 
     def list_by_status(self, status: str):
         return self.repository.get_by_status(status)
@@ -36,12 +41,23 @@ class StorageResourceService:
         health_status: str = "healthy",
         capacity_total: float | None = None,
         capacity_used: float | None = None,
+        adapter_type: str = "manual",
+        endpoint_url: str | None = None,
+        credential_ref: str | None = None,
+        monitoring_enabled: bool = False,
+        poll_interval_seconds: int = 300,
+        stale_after_seconds: int = 900,
     ):
         name = self._validate_name(name)
         resource_type = self._validate_resource_type(resource_type)
         status = self._validate_status(status)
         health_status = self._validate_health_status(health_status)
+        adapter_type = self._validate_adapter_type(adapter_type)
         self._validate_capacity(capacity_total, capacity_used)
+        self._validate_monitoring_intervals(
+            poll_interval_seconds,
+            stale_after_seconds,
+        )
 
         if self.repository.get_by_name(name):
             raise ValueError("Storage resource already exists.")
@@ -53,6 +69,12 @@ class StorageResourceService:
             health_status=health_status,
             capacity_total=capacity_total,
             capacity_used=capacity_used,
+            adapter_type=adapter_type,
+            endpoint_url=endpoint_url,
+            credential_ref=credential_ref,
+            monitoring_enabled=monitoring_enabled,
+            poll_interval_seconds=poll_interval_seconds,
+            stale_after_seconds=stale_after_seconds,
         )
 
         self.repository.add(resource)
@@ -85,6 +107,32 @@ class StorageResourceService:
             resource.health_status = self._validate_health_status(
                 updates["health_status"]
             )
+
+        if "adapter_type" in updates:
+            resource.adapter_type = self._validate_adapter_type(
+                updates["adapter_type"]
+            )
+
+        for field in {
+            "endpoint_url",
+            "credential_ref",
+            "monitoring_enabled",
+        }:
+            if field in updates:
+                setattr(resource, field, updates[field])
+
+        poll_interval_seconds = updates.get(
+            "poll_interval_seconds", resource.poll_interval_seconds
+        )
+        stale_after_seconds = updates.get(
+            "stale_after_seconds", resource.stale_after_seconds
+        )
+        self._validate_monitoring_intervals(
+            poll_interval_seconds,
+            stale_after_seconds,
+        )
+        resource.poll_interval_seconds = poll_interval_seconds
+        resource.stale_after_seconds = stale_after_seconds
 
         capacity_total = updates.get(
             "capacity_total", resource.capacity_total
@@ -145,6 +193,30 @@ class StorageResourceService:
             )
 
         return health_status
+
+    @classmethod
+    def _validate_adapter_type(cls, adapter_type: str) -> str:
+        if adapter_type not in cls.ALLOWED_ADAPTER_TYPES:
+            raise ValueError("Invalid storage adapter type.")
+        return adapter_type
+
+    @staticmethod
+    def _validate_monitoring_intervals(
+        poll_interval_seconds: int,
+        stale_after_seconds: int,
+    ) -> None:
+        if (
+            not isinstance(poll_interval_seconds, int)
+            or isinstance(poll_interval_seconds, bool)
+            or poll_interval_seconds < 15
+        ):
+            raise ValueError("Poll interval must be at least 15 seconds.")
+        if (
+            not isinstance(stale_after_seconds, int)
+            or isinstance(stale_after_seconds, bool)
+            or stale_after_seconds < 15
+        ):
+            raise ValueError("Stale threshold must be at least 15 seconds.")
 
     @staticmethod
     def _validate_capacity(
