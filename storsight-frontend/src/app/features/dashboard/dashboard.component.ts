@@ -77,6 +77,7 @@ export class DashboardComponent implements OnInit {
   totalResources  = computed(() => this.allResources().length);
   activeAlerts    = computed(() => this.allAlerts().filter(a => a.status === 'active').length);
   openIncidents   = computed(() => this.allIncidents().filter(i => i.status !== 'resolved').length);
+  attentionCount  = computed(() => this.activeAlerts() + this.openIncidents());
   criticalIncidents = computed(() =>
     this.allIncidents().filter(i => i.severity === 'critical' && i.status !== 'resolved').length
   );
