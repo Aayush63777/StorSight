@@ -1,5 +1,7 @@
 """Tests for StorSight Phase 10.2 — CORS & Session Cookie Configuration."""
 
+import importlib
+
 import pytest
 
 from app import create_app
@@ -67,9 +69,11 @@ def test_production_config_cookie_httponly():
     assert ProductionConfig.SESSION_COOKIE_HTTPONLY is True
 
 
-def test_production_config_cookie_samesite():
-    """ProductionConfig uses SameSite=Lax."""
-    assert ProductionConfig.SESSION_COOKIE_SAMESITE == "Lax"
+def test_production_config_cookie_samesite(monkeypatch):
+    """ProductionConfig allows cross-site HTTPS frontend sessions."""
+    monkeypatch.delenv("SESSION_COOKIE_SAMESITE", raising=False)
+    config = importlib.reload(importlib.import_module("app.config"))
+    assert config.ProductionConfig.SESSION_COOKIE_SAMESITE == "None"
 
 
 def test_production_config_cookie_secure_is_true():
