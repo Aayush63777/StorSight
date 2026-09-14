@@ -424,7 +424,9 @@ def test_risk_service_classify_critical(app):
 def test_health_endpoint_still_works(client):
     response = client.get("/health")
     assert response.status_code == 200
-    assert response.get_json() == {"status": "ok"}
+    data = response.get_json()
+    assert data["status"] == "ok"
+    assert data["checks"]["database"]["status"] == "ok"
 
 
 def test_incidents_endpoint_still_protected(client):

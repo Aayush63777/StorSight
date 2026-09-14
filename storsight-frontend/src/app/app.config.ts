@@ -11,7 +11,6 @@ import {
 import {
   provideHttpClient,
   withInterceptors,
-  withFetch,
 } from '@angular/common/http';
 
 import { routes } from './app.routes';
@@ -41,7 +40,6 @@ export const appConfig: ApplicationConfig = {
     ),
 
     provideHttpClient(
-      withFetch(),
       withInterceptors([authInterceptor]),
     ),
 

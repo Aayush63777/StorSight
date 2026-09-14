@@ -293,7 +293,8 @@ Publish `dist/storsight-frontend/browser` and configure SPA fallback to
 
 ### Production checks
 
-- Confirm `GET /health` returns `{"status":"ok"}` for process liveness.
+- Confirm `GET /health` returns HTTP `200` with a structured `checks`
+    payload, including `database` status, for process liveness.
 - Confirm `GET /health/ready` returns HTTP `200` with both `database` and
     `redis` marked `ok` before routing traffic to the instance. It returns
     HTTP `503` when either dependency is unavailable.
@@ -319,11 +320,11 @@ Publish `dist/storsight-frontend/browser` and configure SPA fallback to
 ### Backend tests
 
 ```bash
-# From the storsight/ root with virtual environment active
-pytest tests/ -q
+# From the storsight/ root with the project virtual environment active
+python -m pytest tests/ -q
 ```
 
-Expected: **279 passed**
+Expected: **312 passed**
 
 ### Frontend tests
 
