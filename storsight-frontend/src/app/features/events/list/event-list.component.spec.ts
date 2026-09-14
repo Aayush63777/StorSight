@@ -23,18 +23,6 @@ const E_CRITICAL: InfraEvent = { id: 1, resource_id: 1, event_type: 'disk_failur
 const E_WARNING:  InfraEvent = { id: 2, resource_id: 1, event_type: 'capacity_warning', severity: 'warning',  message: 'Capacity at 90%',        occurred_at: '2026-01-03T01:00:00' };
 const E_INFO:     InfraEvent = { id: 3, resource_id: 1, event_type: 'health_check',     severity: 'info',     message: 'Routine check completed', occurred_at: '2026-01-03T02:00:00' };
 
-function eventPage(items: InfraEvent[], page = 1, pageSize = 50) {
-  return {
-    items,
-    pagination: {
-      page,
-      page_size: pageSize,
-      total: items.length,
-      total_pages: items.length ? 1 : 0,
-    },
-  };
-}
-
 describe('EventListComponent', () => {
   let fixture: ComponentFixture<EventListComponent>;
   let component: EventListComponent;
@@ -70,7 +58,7 @@ describe('EventListComponent', () => {
   }
 
   function flushEvents(data: InfraEvent[] = [E_CRITICAL, E_WARNING]): void {
-    http.match((r) => r.url.startsWith(EVENTS_BASE))[0]?.flush(eventPage(data));
+    http.match((r) => r.url.startsWith(EVENTS_BASE))[0]?.flush(data);
   }
 
   // ── creation & load ───────────────────────────────────────
@@ -85,7 +73,7 @@ describe('EventListComponent', () => {
   it('should call GET /api/events/ on init', fakeAsync(() => {
     fixture.detectChanges();
     const req = http.expectOne((r) => r.url.startsWith(EVENTS_BASE) && r.method === 'GET');
-    req.flush(eventPage([E_CRITICAL]));
+    req.flush([E_CRITICAL]);
     flushResources();
     tick(); fixture.detectChanges();
   }));
@@ -181,7 +169,7 @@ describe('EventListComponent', () => {
       r.url.startsWith(EVENTS_BASE) && r.urlWithParams.includes('severity=critical'),
     );
     expect(req.request.method).toBe('GET');
-    req.flush(eventPage([E_CRITICAL]));
+    req.flush([E_CRITICAL]);
     tick(); fixture.detectChanges();
     expect(component.severityFilter()).toBe('critical');
     expect(component.resourceFilter()).toBeNull();
@@ -207,7 +195,7 @@ describe('EventListComponent', () => {
     const req = http.expectOne((r) =>
       r.url.startsWith(EVENTS_BASE) && r.urlWithParams.includes('resource_id=1'),
     );
-    req.flush(eventPage([E_CRITICAL, E_WARNING]));
+    req.flush([E_CRITICAL, E_WARNING]);
     tick(); fixture.detectChanges();
     expect(component.resourceFilter()).toBe(1);
     expect(component.severityFilter()).toBe('');
@@ -215,18 +203,15 @@ describe('EventListComponent', () => {
 
   // ── event_type search (API-backed) ───────────────────────
 
-  it('should search event types through the API', fakeAsync(() => {
+  it('should filter event types client-side', fakeAsync(() => {
     fixture.detectChanges();
     flushResources(); flushEvents([E_CRITICAL, E_WARNING, E_INFO]);
     tick(); fixture.detectChanges();
 
     component.onTypeInput('disk');
     tick(200);
-    const req = http.expectOne((r) =>
-      r.url.startsWith(EVENTS_BASE) && r.urlWithParams.includes('event_type=disk'),
-    );
-    req.flush(eventPage([E_CRITICAL]));
-    tick(); fixture.detectChanges();
+    fixture.detectChanges();
+
     expect(component.filtered().length).toBe(1);
     expect(component.filtered()[0].event_type).toBe('disk_failure');
   }));
@@ -241,7 +226,7 @@ describe('EventListComponent', () => {
     expect(component.filtered().length).toBe(2);
   }));
 
-  it('should send event_type with the active filters', fakeAsync(() => {
+  it('should preserve API filters while applying client-side event type search', fakeAsync(() => {
     fixture.detectChanges();
     flushResources(); flushEvents();
     tick(); fixture.detectChanges();
@@ -254,12 +239,14 @@ describe('EventListComponent', () => {
     const req = http.expectOne((r) =>
       r.url.startsWith(EVENTS_BASE)
       && r.urlWithParams.includes('resource_id=1')
-      && r.urlWithParams.includes('severity=critical')
-      && r.urlWithParams.includes('event_type=disk'),
+      && r.urlWithParams.includes('severity=critical'),
     );
-    req.flush(eventPage([E_CRITICAL]));
+    req.flush([E_CRITICAL]);
     tick(); fixture.detectChanges();
+
     expect(component.events()).toEqual([E_CRITICAL]);
+    expect(component.filtered().length).toBe(1);
+    expect(component.filtered()[0].event_type).toBe('disk_failure');
   }));
 
   // ── clearFilters ──────────────────────────────────────────

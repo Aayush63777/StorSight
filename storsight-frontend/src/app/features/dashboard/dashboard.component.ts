@@ -1,6 +1,7 @@
 import {
   Component,
   OnInit,
+  OnDestroy,
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   inject,
@@ -9,9 +10,10 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
-import { forkJoin, Observable, of } from 'rxjs';
+import { forkJoin, Observable, of, Subject } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 
+import { AutoRefreshService } from '../../core/services/auto-refresh.service';
 import { StorageResourceService } from '../../core/services/storage-resource.service';
 import { AlertService } from '../../core/services/alert.service';
 import { IncidentService } from '../../core/services/incident.service';
@@ -57,13 +59,15 @@ interface DashboardResult<T> {
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss',
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent implements OnInit, OnDestroy {
   private readonly resources = inject(StorageResourceService);
   private readonly alertSvc = inject(AlertService);
   private readonly incidentSvc = inject(IncidentService);
   private readonly eventSvc = inject(EventService);
   private readonly auditSvc = inject(AuditLogService);
+  private readonly autoRefresh = inject(AutoRefreshService);
   private readonly cdr = inject(ChangeDetectorRef);
+  private readonly destroy$ = new Subject<void>();
   readonly router = inject(Router);
 
   // ── State signals ─────────────────────────────────────────
@@ -138,6 +142,38 @@ export class DashboardComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadDashboard();
+    this.autoRefresh.startPolling({
+      request: () => this.loadDashboardRequest(),
+      intervalMs: 120_000,
+      destroy$: this.destroy$,
+      initialDelayMs: 120_000,
+      onSuccess: (data) => {
+        const failedSections = Object.entries(data)
+          .filter(([, result]) => result.failed)
+          .map(([section]) => section);
+
+        this.allResources.set(data.resources.value);
+        this.allAlerts.set(data.alerts.value);
+        this.allIncidents.set(data.incidents.value);
+        this.allEvents.set(data.events.value);
+        this.auditLogs.set(data.auditLogs.value);
+        this.degradedSections.set(failedSections);
+        this.degraded.set(failedSections.length > 0);
+        this.lastUpdated.set(new Date());
+        this.loading.set(false);
+        this.cdr.markForCheck();
+      },
+      onError: () => {
+        this.error.set('Failed to load dashboard.');
+        this.loading.set(false);
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   loadDashboard(): void {
@@ -146,13 +182,7 @@ export class DashboardComponent implements OnInit {
     this.degraded.set(false);
     this.degradedSections.set([]);
 
-    forkJoin({
-      resources: this.dashboardRequest(this.resources.list(), []),
-      alerts:    this.dashboardRequest(this.alertSvc.list(), []),
-      incidents: this.dashboardRequest(this.incidentSvc.list(), []),
-      events:    this.dashboardRequest(this.eventSvc.list(), []),
-      auditLogs: this.dashboardRequest(this.auditSvc.list(), []),
-    }).subscribe({
+    this.loadDashboardRequest().subscribe({
       next: (data: DashboardData) => {
         const failedSections = Object.entries(data)
           .filter(([, result]) => result.failed)
@@ -169,6 +199,21 @@ export class DashboardComponent implements OnInit {
         this.loading.set(false);
         this.cdr.markForCheck();
       },
+      error: () => {
+        this.error.set('Failed to load dashboard.');
+        this.loading.set(false);
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  private loadDashboardRequest(): Observable<DashboardData> {
+    return forkJoin({
+      resources: this.dashboardRequest(this.resources.list(), []),
+      alerts: this.dashboardRequest(this.alertSvc.list(), []),
+      incidents: this.dashboardRequest(this.incidentSvc.list(), []),
+      events: this.dashboardRequest(this.eventSvc.list(), []),
+      auditLogs: this.dashboardRequest(this.auditSvc.list(), []),
     });
   }
 

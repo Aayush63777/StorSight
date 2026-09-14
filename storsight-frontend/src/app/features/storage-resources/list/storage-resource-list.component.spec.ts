@@ -16,18 +16,21 @@ const R1: StorageResource = {
   id: 1, name: 'san-01', resource_type: 'SAN',
   status: 'healthy', health_status: 'healthy',
   capacity_total: 2000, capacity_used: 800,
+  capacity_utilization_percent: 40,
   created_at: '2026-01-01T00:00:00', updated_at: '2026-01-02T00:00:00',
 };
 const R2: StorageResource = {
   id: 2, name: 'nas-01', resource_type: 'NAS',
   status: 'warning', health_status: 'warning',
   capacity_total: 1000, capacity_used: 950,
+  capacity_utilization_percent: 95,
   created_at: '2026-01-01T00:00:00', updated_at: '2026-01-03T00:00:00',
 };
 const R3: StorageResource = {
   id: 3, name: 'offline-node', resource_type: 'SAN',
   status: 'offline', health_status: 'unknown',
   capacity_total: null, capacity_used: null,
+  capacity_utilization_percent: 0,
   created_at: '2026-01-01T00:00:00', updated_at: '2026-01-01T00:00:00',
 };
 

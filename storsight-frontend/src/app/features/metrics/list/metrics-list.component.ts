@@ -14,6 +14,7 @@ import { FormsModule } from '@angular/forms';
 import { Subject, forkJoin, of } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil, catchError } from 'rxjs/operators';
 
+import { AutoRefreshService } from '../../../core/services/auto-refresh.service';
 import { MetricService } from '../../../core/services/metric.service';
 import { StorageResourceService } from '../../../core/services/storage-resource.service';
 import { Metric, StorageResource } from '../../../core/models';
@@ -43,6 +44,7 @@ import { RelativeTimePipe } from '../../../shared/pipes/relative-time.pipe';
 export class MetricsListComponent implements OnInit, OnDestroy {
   private readonly metricSvc   = inject(MetricService);
   private readonly resourceSvc = inject(StorageResourceService);
+  private readonly autoRefresh = inject(AutoRefreshService);
   private readonly router      = inject(Router);
   private readonly cdr         = inject(ChangeDetectorRef);
   private readonly destroy$    = new Subject<void>();
@@ -93,6 +95,25 @@ export class MetricsListComponent implements OnInit, OnDestroy {
     });
 
     this.loadMetrics();
+    this.autoRefresh.startPolling({
+      request: () => this.metricSvc.list({
+        resource_id: this.resourceFilter() ?? undefined,
+        metric_name: this.metricNameFilter().trim() || undefined,
+      }),
+      intervalMs: 120_000,
+      destroy$: this.destroy$,
+      initialDelayMs: 120_000,
+      onSuccess: (list) => {
+        this.metrics.set(list);
+        this.loading.set(false);
+        this.cdr.markForCheck();
+      },
+      onError: () => {
+        this.error.set('Failed to load metrics.');
+        this.loading.set(false);
+        this.cdr.markForCheck();
+      },
+    });
   }
 
   loadResources(): void {

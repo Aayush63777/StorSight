@@ -1,6 +1,7 @@
 import {
   Component,
   OnInit,
+  OnDestroy,
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   inject,
@@ -10,7 +11,9 @@ import {
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { Subject } from 'rxjs';
 
+import { AutoRefreshService } from '../../../core/services/auto-refresh.service';
 import { IncidentService } from '../../../core/services/incident.service';
 import { Incident } from '../../../core/models';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
@@ -39,10 +42,12 @@ const INCIDENT_STATUSES   = ['open', 'in_progress', 'resolved'] as const;
   templateUrl: './incident-list.component.html',
   styleUrl:    './incident-list.component.scss',
 })
-export class IncidentListComponent implements OnInit {
+export class IncidentListComponent implements OnInit, OnDestroy {
   private readonly incidentSvc = inject(IncidentService);
+  private readonly autoRefresh = inject(AutoRefreshService);
   private readonly router      = inject(Router);
   private readonly cdr         = inject(ChangeDetectorRef);
+  private readonly destroy$    = new Subject<void>();
 
   readonly severities = INCIDENT_SEVERITIES;
   readonly statuses   = INCIDENT_STATUSES;
@@ -62,6 +67,30 @@ export class IncidentListComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadIncidents();
+    this.autoRefresh.startPolling({
+      request: () => this.incidentSvc.list({
+        status: this.statusFilter() || undefined,
+        severity: this.severityFilter() || undefined,
+      }),
+      intervalMs: 60_000,
+      destroy$: this.destroy$,
+      initialDelayMs: 60_000,
+      onSuccess: (list) => {
+        this.incidents.set(list);
+        this.loading.set(false);
+        this.cdr.markForCheck();
+      },
+      onError: () => {
+        this.error.set('Failed to load incidents.');
+        this.loading.set(false);
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   onStatusChange(value: string): void {

@@ -22,8 +22,7 @@ export class MetricService {
     let params = new HttpParams();
     if (filters?.resource_id != null) {
       params = params.set('resource_id', filters.resource_id);
-    }
-    if (filters?.metric_name) {
+    } else if (filters?.metric_name) {
       params = params.set('metric_name', filters.metric_name);
     }
     return this.http.get<Metric[]>(`${this.base}/`, { params });
@@ -33,8 +32,11 @@ export class MetricService {
     let params = new HttpParams()
       .set('page', filters?.page ?? 1)
       .set('page_size', filters?.page_size ?? 50);
-    if (filters?.resource_id != null) params = params.set('resource_id', filters.resource_id);
-    if (filters?.metric_name) params = params.set('metric_name', filters.metric_name);
+    if (filters?.resource_id != null) {
+      params = params.set('resource_id', filters.resource_id);
+    } else if (filters?.metric_name) {
+      params = params.set('metric_name', filters.metric_name);
+    }
     if (filters?.from) params = params.set('from', filters.from);
     if (filters?.to) params = params.set('to', filters.to);
     return this.http.get<MetricPage | Metric[]>(`${this.base}/`, { params }).pipe(

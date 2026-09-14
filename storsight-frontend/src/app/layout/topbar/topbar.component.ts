@@ -26,12 +26,7 @@ import { AuthService } from '../../core/auth/auth.service';
 
         <a class="topbar__brand" routerLink="/dashboard" aria-label="StorSight — go to dashboard">
           <span class="topbar__brand-mark" aria-hidden="true">
-            <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-              <rect x="1" y="1" width="9" height="9" rx="2" fill="var(--color-primary)" opacity="0.9"/>
-              <rect x="12" y="1" width="9" height="9" rx="2" fill="var(--color-primary)" opacity="0.5"/>
-              <rect x="1" y="12" width="9" height="9" rx="2" fill="var(--color-primary)" opacity="0.5"/>
-              <rect x="12" y="12" width="9" height="9" rx="2" fill="var(--color-primary)" opacity="0.25"/>
-            </svg>
+            <img src="assets/brand/storsight-symbol.svg" alt="" width="22" height="22" />
           </span>
           <span class="topbar__brand-name">StorSight</span>
         </a>

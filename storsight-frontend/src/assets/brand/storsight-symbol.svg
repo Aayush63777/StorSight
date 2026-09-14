@@ -1,0 +1,38 @@
+<svg width="160" height="160" viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="layerTop" x1="24" y1="28" x2="124" y2="128" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#5BE3FF"/>
+      <stop offset="0.55" stop-color="#4FA8FF"/>
+      <stop offset="1" stop-color="#7D6BFF"/>
+    </linearGradient>
+    <linearGradient id="layerMid" x1="32" y1="36" x2="132" y2="136" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8EE3FF"/>
+      <stop offset="0.45" stop-color="#5AA9FF"/>
+      <stop offset="1" stop-color="#A665FF"/>
+    </linearGradient>
+    <linearGradient id="layerBottom" x1="20" y1="42" x2="138" y2="146" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#B9F1FF"/>
+      <stop offset="0.35" stop-color="#76C5FF"/>
+      <stop offset="1" stop-color="#8A6DFF"/>
+    </linearGradient>
+  </defs>
+
+  <g>
+    <path d="M80 18L130 68L80 118L30 68L80 18Z" fill="url(#layerTop)" opacity="0.98"/>
+    <path d="M82 39L126 83L82 127L38 83L82 39Z" fill="url(#layerMid)" opacity="0.82"/>
+    <path d="M82 58L117 93L82 128L47 93L82 58Z" fill="url(#layerBottom)" opacity="0.9"/>
+
+    <rect x="58" y="72" width="9" height="29" rx="2" fill="white" opacity="0.96"/>
+    <rect x="71" y="64" width="9" height="37" rx="2" fill="white" opacity="0.96"/>
+    <rect x="84" y="54" width="9" height="47" rx="2" fill="white" opacity="0.96"/>
+    <rect x="97" y="69" width="9" height="32" rx="2" fill="white" opacity="0.96"/>
+  </g>
+
+  <g opacity="0.96">
+    <circle cx="18" cy="84" r="8" fill="#B7F0FF"/>
+    <circle cx="130" cy="126" r="8" fill="#C9D5FF"/>
+    <circle cx="120" cy="32" r="7" fill="#B7F0FF"/>
+    <path d="M122 32C122 32 82 60 18 84" stroke="url(#layerMid)" stroke-width="4" stroke-linecap="round" opacity="0.95"/>
+    <path d="M130 126C130 126 96 105 82 88" stroke="url(#layerTop)" stroke-width="4" stroke-linecap="round" opacity="0.95"/>
+  </g>
+</svg>

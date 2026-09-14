@@ -1,6 +1,7 @@
 import {
   Component,
   OnInit,
+  OnDestroy,
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   inject,
@@ -9,8 +10,10 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Subject } from 'rxjs';
 
 import { AuditLogService } from '../../core/services/audit-log.service';
+import { AutoRefreshService } from '../../core/services/auto-refresh.service';
 import { AuditLog } from '../../core/models';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
@@ -36,9 +39,11 @@ const PAGE_SIZE = 20;
   templateUrl: './audit-logs.component.html',
   styleUrl:    './audit-logs.component.scss',
 })
-export class AuditLogsComponent implements OnInit {
+export class AuditLogsComponent implements OnInit, OnDestroy {
   private readonly auditSvc = inject(AuditLogService);
+  private readonly autoRefresh = inject(AutoRefreshService);
   private readonly cdr      = inject(ChangeDetectorRef);
+  private readonly destroy$ = new Subject<void>();
 
   // ── State ──────────────────────────────────────────────────
   loading = signal(true);
@@ -93,6 +98,27 @@ export class AuditLogsComponent implements OnInit {
 
   ngOnInit(): void {
     this.load();
+    this.autoRefresh.startPolling({
+      request: () => this.auditSvc.list(),
+      intervalMs: 300_000,
+      destroy$: this.destroy$,
+      initialDelayMs: 300_000,
+      onSuccess: (logs) => {
+        this.allLogs.set(logs);
+        this.loading.set(false);
+        this.cdr.markForCheck();
+      },
+      onError: () => {
+        this.error.set('Failed to load audit logs.');
+        this.loading.set(false);
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   load(): void {

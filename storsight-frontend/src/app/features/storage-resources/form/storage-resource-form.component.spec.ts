@@ -126,7 +126,7 @@ describe('StorageResourceFormComponent — create mode', () => {
   it('should POST to /api/storage-resources/ on valid submit', fakeAsync(() => {
     component.form.patchValue({
       name: 'new-node', resource_type: 'NAS',
-      status: 'healthy', health_status: 'healthy',
+      status: 'healthy',
     });
     component.onSubmit();
     fixture.detectChanges();

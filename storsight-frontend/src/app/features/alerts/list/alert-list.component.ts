@@ -1,6 +1,7 @@
 import {
   Component,
   OnInit,
+  OnDestroy,
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   inject,
@@ -10,10 +11,11 @@ import {
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { of } from 'rxjs';
+import { of, Subject } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
 import { AlertService } from '../../../core/services/alert.service';
+import { AutoRefreshService } from '../../../core/services/auto-refresh.service';
 import { StorageResourceService } from '../../../core/services/storage-resource.service';
 import { Alert, StorageResource } from '../../../core/models';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
@@ -43,11 +45,13 @@ const ALERT_STATUSES   = ['active', 'resolved'] as const;
   templateUrl: './alert-list.component.html',
   styleUrl:    './alert-list.component.scss',
 })
-export class AlertListComponent implements OnInit {
+export class AlertListComponent implements OnInit, OnDestroy {
   private readonly alertSvc    = inject(AlertService);
   private readonly resourceSvc = inject(StorageResourceService);
+  private readonly autoRefresh = inject(AutoRefreshService);
   private readonly router      = inject(Router);
   private readonly cdr         = inject(ChangeDetectorRef);
+  private readonly destroy$    = new Subject<void>();
 
   readonly severities = ALERT_SEVERITIES;
   readonly statuses   = ALERT_STATUSES;
@@ -89,6 +93,21 @@ export class AlertListComponent implements OnInit {
   ngOnInit(): void {
     this.loadResources();
     this.loadAlerts();
+    this.autoRefresh.startPolling({
+      request: () => this.alertSvc.list({
+        resource_id: this.resourceFilter() ?? undefined,
+        severity: this.severityFilter() || undefined,
+        status: this.statusFilter() || undefined,
+      }),
+      intervalMs: 60_000,
+      destroy$: this.destroy$,
+      initialDelayMs: 60_000,
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   loadResources(): void {

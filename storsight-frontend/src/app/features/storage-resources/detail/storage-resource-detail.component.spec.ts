@@ -16,11 +16,19 @@ const RESOURCE: StorageResource = {
   id: 42, name: 'san-primary', resource_type: 'SAN',
   status: 'healthy', health_status: 'healthy',
   capacity_total: 4000, capacity_used: 2000,
+  capacity_available: 2000,
+  capacity_utilization_percent: 50,
   created_at: '2026-01-01T00:00:00', updated_at: '2026-06-01T00:00:00',
 };
 
 const RESOURCE_NO_CAP: StorageResource = {
-  ...RESOURCE, id: 43, name: 'no-cap', capacity_total: null, capacity_used: null,
+  ...RESOURCE,
+  id: 43,
+  name: 'no-cap',
+  capacity_total: null,
+  capacity_used: null,
+  capacity_available: null,
+  capacity_utilization_percent: null,
 };
 
 function makeFixture(paramId: string) {

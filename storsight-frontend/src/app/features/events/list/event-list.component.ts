@@ -14,6 +14,7 @@ import { FormsModule } from '@angular/forms';
 import { Subject, of } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil, catchError } from 'rxjs/operators';
 
+import { AutoRefreshService } from '../../../core/services/auto-refresh.service';
 import { EventService } from '../../../core/services/event.service';
 import { StorageResourceService } from '../../../core/services/storage-resource.service';
 import { Event as InfraEvent, StorageResource } from '../../../core/models';
@@ -48,6 +49,7 @@ const EVENT_SEVERITIES = ['info', 'warning', 'error', 'critical'] as const;
 export class EventListComponent implements OnInit, OnDestroy {
   private readonly eventSvc    = inject(EventService);
   private readonly resourceSvc = inject(StorageResourceService);
+  private readonly autoRefresh = inject(AutoRefreshService);
   private readonly router      = inject(Router);
   private readonly cdr         = inject(ChangeDetectorRef);
   private readonly destroy$    = new Subject<void>();
@@ -110,6 +112,25 @@ export class EventListComponent implements OnInit, OnDestroy {
     });
 
     this.loadEvents();
+    this.autoRefresh.startPolling({
+      request: () => this.eventSvc.list({
+        resource_id: this.resourceFilter() ?? undefined,
+        severity: this.severityFilter() || undefined,
+      }),
+      intervalMs: 60_000,
+      destroy$: this.destroy$,
+      initialDelayMs: 60_000,
+      onSuccess: (list) => {
+        this.events.set(list);
+        this.loading.set(false);
+        this.cdr.markForCheck();
+      },
+      onError: () => {
+        this.error.set('Failed to load events.');
+        this.loading.set(false);
+        this.cdr.markForCheck();
+      },
+    });
   }
 
   loadResources(): void {

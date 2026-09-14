@@ -14,6 +14,7 @@ import { FormsModule } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 
+import { AutoRefreshService } from '../../../core/services/auto-refresh.service';
 import { StorageResourceService } from '../../../core/services/storage-resource.service';
 import { StorageResource } from '../../../core/models';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
@@ -46,6 +47,7 @@ const RESOURCE_TYPE_OPTIONS = ['', 'SAN', 'NAS', 'iSCSI', 'NVMe', 'Object'] as c
 })
 export class StorageResourceListComponent implements OnInit, OnDestroy {
   private readonly svc    = inject(StorageResourceService);
+  private readonly autoRefresh = inject(AutoRefreshService);
   private readonly router = inject(Router);
   private readonly cdr    = inject(ChangeDetectorRef);
   private readonly destroy$ = new Subject<void>();
@@ -90,6 +92,26 @@ export class StorageResourceListComponent implements OnInit, OnDestroy {
     });
 
     this.loadResources();
+    this.autoRefresh.startPolling({
+      request: () => this.svc.list({
+        name: this.nameFilter().trim() || undefined,
+        status: this.statusFilter() || undefined,
+        resource_type: this.resourceTypeFilter() || undefined,
+      }),
+      intervalMs: 300_000,
+      destroy$: this.destroy$,
+      initialDelayMs: 300_000,
+      onSuccess: (list) => {
+        this.resources.set(list);
+        this.loading.set(false);
+        this.cdr.markForCheck();
+      },
+      onError: () => {
+        this.error.set('Failed to load storage resources.');
+        this.loading.set(false);
+        this.cdr.markForCheck();
+      },
+    });
   }
 
   ngOnDestroy(): void {
@@ -147,7 +169,8 @@ export class StorageResourceListComponent implements OnInit, OnDestroy {
 
   /** Safe utilisation percentage clamped 0–100. */
   utilPercent(r: StorageResource): number {
-    return r.capacity_utilization_percent ?? 0;
+    const pct = r.capacity_utilization_percent ?? 0;
+    return Math.min(100, Math.max(0, pct));
   }
 
   /** CSS class for utilisation bar colour. */
