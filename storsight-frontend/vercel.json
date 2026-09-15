@@ -3,6 +3,14 @@
   "outputDirectory": "dist/storsight-frontend/browser",
   "rewrites": [
     {
+      "source": "/assets/(.*)",
+      "destination": "/assets/$1"
+    },
+    {
+      "source": "/favicon.ico",
+      "destination": "/favicon.ico"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "https://storsight.onrender.com/api/$1"
     },
