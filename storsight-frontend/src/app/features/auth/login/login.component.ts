@@ -181,19 +181,20 @@ import { ErrorBannerComponent } from '../../../shared/components/error-banner/er
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 1.45rem;
-      height: 1.45rem;
-      padding: 0.18rem;
-      border-radius: 0.55rem;
-      background: linear-gradient(135deg, rgba(91, 227, 255, 0.18), rgba(125, 107, 255, 0.18));
-      border: 1px solid rgba(123, 164, 255, 0.35);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+      width: 1.6rem;
+      height: 1.6rem;
+      padding: 0;
+      border-radius: 0;
+      background: transparent;
+      border: none;
+      box-shadow: none;
     }
     .brand-mark img {
       display: block;
       width: 100%;
       height: 100%;
       object-fit: contain;
+      filter: saturate(0.92) brightness(0.92);
     }
 
     .story-copy { position: relative; z-index: 1; margin-top: auto; margin-bottom: 3rem; max-width: 26rem; }
