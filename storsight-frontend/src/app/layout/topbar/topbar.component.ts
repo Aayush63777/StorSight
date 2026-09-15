@@ -123,7 +123,25 @@ import { AuthService } from '../../core/auth/auth.service';
       flex-shrink: 0;
     }
     .topbar__brand:hover { text-decoration: none; }
-    .topbar__brand-mark { display: flex; align-items: center; flex-shrink: 0; }
+    .topbar__brand-mark {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      padding: 5px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, rgba(91, 227, 255, 0.18), rgba(125, 107, 255, 0.2));
+      border: 1px solid rgba(123, 164, 255, 0.28);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      flex-shrink: 0;
+    }
+    .topbar__brand-mark img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
     .topbar__brand-name {
       font-size: 1rem;
       font-weight: 700;

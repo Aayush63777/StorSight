@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { BehaviorSubject, Observable, of } from 'rxjs';
-import { tap, catchError, map } from 'rxjs/operators';
+import { tap, catchError, map, timeout } from 'rxjs/operators';
 import { Router } from '@angular/router';
 
 import { environment } from '../../../environments/environment';
@@ -44,6 +44,7 @@ export class AuthService {
     return this.http
       .get<User>(`${this.api}/api/auth/me`, { withCredentials: true })
       .pipe(
+        timeout(5000),
         tap((user) => {
           this.currentUserSubject.next(user);
           this.loadingSubject.next(false);
