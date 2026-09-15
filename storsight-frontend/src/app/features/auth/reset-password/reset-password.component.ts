@@ -16,7 +16,7 @@ import { ErrorBannerComponent } from '../../../shared/components/error-banner/er
     <main class="auth-page">
       <section class="auth-card" aria-labelledby="reset-title">
         <a class="back-link" routerLink="/login">Back to sign in</a>
-        <div class="brand-lockup"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span><strong>StorSight</strong></div>
+        <div class="brand-lockup"><span class="brand-mark" aria-hidden="true"><img src="assets/brand/storsight-symbol.svg" alt="" /></span><strong>StorSight</strong></div>
         @if (!submitted()) {
           <p class="eyebrow">Account recovery</p>
           <h1 id="reset-title">Choose a new password</h1>
@@ -50,7 +50,8 @@ import { ErrorBannerComponent } from '../../../shared/components/error-banner/er
     .auth-card { background:rgba(15,20,28,.9); border:1px solid rgba(139,148,158,.22); border-radius:1rem; box-shadow:0 2rem 6rem rgba(0,0,0,.35); max-width:27rem; padding:2rem; width:100%; }
     .back-link { color:var(--color-text-muted); display:inline-block; font-size:.75rem; margin-bottom:2rem; }
     .brand-lockup { align-items:center; color:var(--color-text); display:flex; font-size:1.1rem; gap:.65rem; margin-bottom:3rem; }
-    .brand-mark { align-items:flex-end; display:flex; gap:3px; height:1.5rem; }.brand-mark i { background:var(--color-primary); border-radius:2px; display:block; width:5px; }.brand-mark i:nth-child(1){height:.7rem;opacity:.5}.brand-mark i:nth-child(2){height:1.1rem;opacity:.75}.brand-mark i:nth-child(3){height:1.5rem}
+    .brand-mark { align-items:center; background:linear-gradient(135deg, rgba(91, 227, 255, 0.18), rgba(125, 107, 255, 0.18)); border:1px solid rgba(123, 164, 255, 0.35); border-radius:.55rem; box-shadow: inset 0 1px 0 rgba(255,255,255,.18); display:flex; height:1.5rem; justify-content:center; padding:.18rem; width:1.5rem; }
+    .brand-mark img { display:block; height:100%; object-fit:contain; width:100%; }
     .eyebrow { color:var(--color-primary); font-size:.6875rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase; }.auth-card h1 { font-size:1.8rem; margin:.55rem 0 .5rem; }.description { color:var(--color-text-muted); font-size:.875rem; line-height:1.6; margin-bottom:1.5rem; }.auth-card ss-error-banner { display:block; margin-bottom:1rem; }.auth-card label { color:var(--color-text-muted); display:block; font-size:.8rem; font-weight:500; margin-bottom:.4rem; }.auth-card .form-control { margin-bottom:1rem; min-height:3rem; }.auth-card .btn { align-items:center; display:flex; justify-content:center; min-height:3rem; text-decoration:none; width:100%; }.validation-message { color:#f6a666; font-size:.75rem; margin:-.5rem 0 1rem; }.footer-note { border-top:1px solid var(--color-border); color:var(--color-text-subtle); font-size:.7rem; margin-top:2rem; padding-top:1rem; text-align:center; }.success-state { text-align:center; }.success-icon { align-items:center; background:rgba(121,217,196,.13); border:1px solid rgba(121,217,196,.4); border-radius:50%; color:#79d9c4; display:flex; font-size:1.4rem; height:3.5rem; justify-content:center; margin:0 auto 1.5rem; width:3.5rem; }.success-state .description { margin-bottom:1.5rem; }
   `],
 })

@@ -17,7 +17,7 @@ import { ErrorBannerComponent } from '../../../shared/components/error-banner/er
         <section class="login-story" aria-labelledby="story-title">
           <div class="brand-lockup">
             <span class="brand-mark" aria-hidden="true">
-              <i></i><i></i><i></i>
+              <img src="assets/brand/storsight-symbol.svg" alt="" />
             </span>
             <span>StorSight</span>
           </div>
@@ -177,11 +177,24 @@ import { ErrorBannerComponent } from '../../../shared/components/error-banner/er
       font-weight: 700;
       letter-spacing: -.02em;
     }
-    .brand-mark { display: inline-flex; align-items: end; gap: 3px; height: 1.35rem; }
-    .brand-mark i { display: block; width: 4px; border-radius: 4px; background: #54a9ff; }
-    .brand-mark i:nth-child(1) { height: .65rem; }
-    .brand-mark i:nth-child(2) { height: 1rem; }
-    .brand-mark i:nth-child(3) { height: 1.35rem; }
+    .brand-mark {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.45rem;
+      height: 1.45rem;
+      padding: 0.18rem;
+      border-radius: 0.55rem;
+      background: linear-gradient(135deg, rgba(91, 227, 255, 0.18), rgba(125, 107, 255, 0.18));
+      border: 1px solid rgba(123, 164, 255, 0.35);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+    }
+    .brand-mark img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
 
     .story-copy { position: relative; z-index: 1; margin-top: auto; margin-bottom: 3rem; max-width: 26rem; }
     .eyebrow { color: #55adff; font-size: .72rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
